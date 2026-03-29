@@ -284,16 +284,31 @@
 
     Promise.all([
       API.getEvent(eventId),
-      API.listShifts(eventId).catch(function () { return []; }),
-      API.listLocations(eventId).catch(function () { return []; }),
-      API.listAssignmentsByEvent(eventId).catch(function () { return []; }),
       API.listVolunteers().catch(function () { return []; })
     ]).then(function (results) {
-      Admin._eventData = results[0];
-      Admin._shiftsData = results[1] || [];
-      Admin._locationsData = results[2] || [];
-      Admin._assignmentsData = results[3] || [];
-      Admin._volunteersData = results[4] || [];
+      var eventResp = results[0];
+      // getEvent returns { ...event, shifts: [...with assignments], locations: [...] }
+      var shiftsWithAssignments = eventResp.shifts || [];
+      Admin._eventData = eventResp;
+      Admin._shiftsData = shiftsWithAssignments.map(function (s) {
+        var copy = {};
+        for (var k in s) { if (k !== 'assignments') copy[k] = s[k]; }
+        return copy;
+      });
+      Admin._locationsData = eventResp.locations || [];
+      // Flatten assignments from all shifts
+      var allAssignments = [];
+      shiftsWithAssignments.forEach(function (shift) {
+        (shift.assignments || []).forEach(function (a) {
+          allAssignments.push(Object.assign({}, a, {
+            shiftName: shift.name,
+            shiftTimeStart: shift.timeStart,
+            shiftTimeEnd: shift.timeEnd
+          }));
+        });
+      });
+      Admin._assignmentsData = allAssignments;
+      Admin._volunteersData = results[1] || [];
 
       Admin.renderEventHeader();
       Admin.renderShifts();

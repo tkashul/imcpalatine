@@ -125,17 +125,17 @@
     deleteVolunteer: function (id) { return request('DELETE', '/api/volunteers/' + id); },
 
     /* --- Assignments --- */
-    listAssignmentsByEvent: function (eventId) { return request('GET', '/api/events/' + eventId + '/assignments'); },
+    listAssignmentsByEvent: function (eventId) { return request('GET', '/api/assignments/event/' + eventId); },
     createAssignment: function (data) { return request('POST', '/api/assignments', data); },
     updateAssignment: function (id, data) { return request('PUT', '/api/assignments/' + id, data); },
     deleteAssignment: function (id) { return request('DELETE', '/api/assignments/' + id); },
-    sendInvites: function (assignmentIds) { return request('POST', '/api/assignments/send-invites', { assignment_ids: assignmentIds }); },
+    sendInvites: function (assignmentIds) { return request('POST', '/api/assignments/invite', { assignmentIds: assignmentIds }); },
 
     /* --- My (volunteer self-service) --- */
     mySchedule: function () { return request('GET', '/api/my/schedule'); },
     myUpdateAssignment: function (id, data) { return request('PUT', '/api/my/assignments/' + id, data); },
     myAvailableShifts: function () { return request('GET', '/api/my/available-shifts'); },
-    mySignUp: function (shiftId) { return request('POST', '/api/my/sign-up', { shift_id: shiftId }); },
+    mySignUp: function (shiftId, eventId) { return request('POST', '/api/my/sign-up', { shift_id: shiftId, event_id: eventId }); },
 
     /* --- Dashboard --- */
     getDashboardStats: function () { return request('GET', '/api/admin/dashboard'); }

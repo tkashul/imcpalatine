@@ -5,7 +5,7 @@ const { handleMagicLink, handleVerify, handleLogout } = require('./api/auth');
 const { listEvents, createEvent, getEvent, updateEvent, deleteEvent } = require('./api/events');
 const { createShift, updateShift, deleteShift } = require('./api/shifts');
 const { createLocation, updateLocation, deleteLocation } = require('./api/locations');
-const { listVolunteers, createVolunteer, updateVolunteer, deleteVolunteer } = require('./api/volunteers');
+const { listVolunteers, getVolunteer, createVolunteer, updateVolunteer, deleteVolunteer } = require('./api/volunteers');
 const {
   listByEvent,
   createAssignment,
@@ -14,6 +14,8 @@ const {
   sendInvites,
   mySchedule,
   myUpdateAssignment,
+  myAvailableShifts,
+  mySignUp,
 } = require('./api/assignments');
 
 // Route definitions — order matters for matching
@@ -42,6 +44,7 @@ const routes = [
 
   // Volunteers
   { method: 'GET', pattern: /^\/api\/volunteers$/, handler: 'volunteersList' },
+  { method: 'GET', pattern: /^\/api\/volunteers\/([^/]+)$/, handler: 'volunteersGet' },
   { method: 'POST', pattern: /^\/api\/volunteers$/, handler: 'volunteersCreate' },
   { method: 'PUT', pattern: /^\/api\/volunteers\/([^/]+)$/, handler: 'volunteersUpdate' },
   { method: 'DELETE', pattern: /^\/api\/volunteers\/([^/]+)$/, handler: 'volunteersDelete' },
@@ -55,6 +58,8 @@ const routes = [
 
   // My (volunteer self-service)
   { method: 'GET', pattern: /^\/api\/my\/schedule$/, handler: 'mySchedule' },
+  { method: 'GET', pattern: /^\/api\/my\/available-shifts$/, handler: 'myAvailableShifts' },
+  { method: 'POST', pattern: /^\/api\/my\/sign-up$/, handler: 'mySignUp' },
   { method: 'PUT', pattern: /^\/api\/my\/assignments\/([^/]+)$/, handler: 'myUpdateAssignment' },
 ];
 
@@ -156,6 +161,9 @@ exports.handler = async (event) => {
     if (matched.handler === 'volunteersList') {
       return await listVolunteers(auth);
     }
+    if (matched.handler === 'volunteersGet') {
+      return await getVolunteer(auth, params[0]);
+    }
     if (matched.handler === 'volunteersCreate') {
       return await createVolunteer(auth, body);
     }
@@ -186,6 +194,12 @@ exports.handler = async (event) => {
     // --- My routes ---
     if (matched.handler === 'mySchedule') {
       return await mySchedule(auth);
+    }
+    if (matched.handler === 'myAvailableShifts') {
+      return await myAvailableShifts(auth);
+    }
+    if (matched.handler === 'mySignUp') {
+      return await mySignUp(auth, body);
     }
     if (matched.handler === 'myUpdateAssignment') {
       return await myUpdateAssignment(auth, params[0], body);

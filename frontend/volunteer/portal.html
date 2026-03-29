@@ -254,7 +254,7 @@
                         _e(Shared.formatTime(s.end_time || s.endTime || '')) + '</strong>' +
                       '<div class="text-dim" style="font-size:0.82rem">' + spotsLeft + ' spot' + (spotsLeft !== 1 ? 's' : '') + ' remaining</div>' +
                     '</div>' +
-                    '<button class="btn btn-sm btn-success" onclick="Portal.signUp(\'' + _e(s.shift_id || s.shiftId || s.id || '') + '\')">Sign Up</button>' +
+                    '<button class="btn btn-sm btn-success" onclick="Portal.signUp(\'' + _e(s.shift_id || s.shiftId || s.id || '') + '\', \'' + _e(evt.event_id || evt.eventId || evt.id || '') + '\')">Sign Up</button>' +
                   '</div>' +
                 '</div>';
               });
@@ -270,21 +270,25 @@
           } else {
             /* Flat shift list */
             items.forEach(function (s) {
-              var spotsLeft = (s.max_volunteers || 0) - (s.current_count || 0);
+              var maxVol = s.maxVolunteers || s.max_volunteers || 0;
+              var curVol = s.currentVolunteers || s.current_count || 0;
+              var spotsLeft = maxVol - curVol;
               if (spotsLeft < 0) spotsLeft = 0;
+              var evtName = (s.event && s.event.name) || s.event_name || s.eventName || 'Event';
+              var evtDate = (s.event && s.event.date) || s.event_date || s.eventDate || '';
 
               html += '<div class="card mb-2">' +
                 '<div class="card-header">' +
-                  '<h3>' + _e(s.event_name || 'Event') + '</h3>' +
-                  '<span class="text-dim">' + _e(Shared.formatDate(s.event_date || '')) + '</span>' +
+                  '<h3>' + _e(evtName) + '</h3>' +
+                  '<span class="text-dim">' + _e(Shared.formatDate(evtDate)) + '</span>' +
                 '</div>' +
                 '<div class="card-meta">' +
-                  '<span>' + _e(Shared.formatTime(s.start_time || '')) + ' \u2013 ' + _e(Shared.formatTime(s.end_time || '')) + '</span>' +
+                  '<span>' + _e(Shared.formatTime(s.timeStart || s.start_time || '')) + ' \u2013 ' + _e(Shared.formatTime(s.timeEnd || s.end_time || '')) + '</span>' +
                   '<span>' + spotsLeft + ' spot' + (spotsLeft !== 1 ? 's' : '') + ' remaining</span>' +
                 '</div>' +
                 (s.location_name ? '<p class="text-dim" style="font-size:0.85rem">Location: ' + _e(s.location_name) + '</p>' : '') +
                 '<div class="card-actions">' +
-                  '<button class="btn btn-sm btn-success" onclick="Portal.signUp(\'' + _e(s.id || s.shift_id || '') + '\')">Sign Up</button>' +
+                  '<button class="btn btn-sm btn-success" onclick="Portal.signUp(\'' + _e(s.shiftId || s.id || s.shift_id || '') + '\', \'' + _e(s.eventId || (s.event && s.event.eventId) || s.event_id || '') + '\')">Sign Up</button>' +
                 '</div>' +
               '</div>';
             });
@@ -302,8 +306,8 @@
         });
       };
 
-      Portal.signUp = function (shiftId) {
-        API.mySignUp(shiftId).then(function () {
+      Portal.signUp = function (shiftId, eventId) {
+        API.mySignUp(shiftId, eventId).then(function () {
           Shared.showToast('You\'re signed up! Check My Schedule for details.');
           Portal.loadSchedule();
           Portal.loadAvailableShifts();

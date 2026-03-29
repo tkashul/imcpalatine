@@ -144,4 +144,12 @@ async function deleteVolunteer(authContext, volunteerId) {
   return noContent();
 }
 
-module.exports = { listVolunteers, createVolunteer, updateVolunteer, deleteVolunteer };
+async function getVolunteer(authContext, volunteerId) {
+  const userItem = await db.get(`USER#${volunteerId}`, 'METADATA');
+  if (!userItem) return notFound('Volunteer not found');
+  if (userItem.orgId !== authContext.orgId) return forbidden();
+
+  return ok(userItem);
+}
+
+module.exports = { listVolunteers, getVolunteer, createVolunteer, updateVolunteer, deleteVolunteer };

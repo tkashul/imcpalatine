@@ -300,7 +300,7 @@ async function main() {
       var locId = locationMap[loc.name];
       allItems.push({
         pk: 'EVENT#' + eventId,
-        sk: 'LOC#' + locId,
+        sk: 'LOCATION#' + locId,
         entityType: 'EventLocation',
         locationId: locId,
         eventId: eventId,

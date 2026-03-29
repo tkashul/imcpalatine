@@ -305,6 +305,154 @@ async function myUpdateAssignment(authContext, assignmentId, body) {
   return ok(updated);
 }
 
+async function myAvailableShifts(authContext) {
+  const { userId, orgId } = authContext;
+
+  // Get all events for the org
+  const events = await db.query(`ORG#${orgId}`, 'EVENT#');
+
+  const today = new Date().toISOString().slice(0, 10);
+  const upcomingEvents = events.filter((e) => e.date >= today);
+
+  // Get user's existing assignments to exclude shifts they're already on
+  const myAssignments = await db.query(`USER#${userId}`, 'ASSIGN#');
+  const myShiftIds = new Set(myAssignments.map((a) => a.shiftId));
+
+  const availableShifts = [];
+
+  for (const evt of upcomingEvents) {
+    const shifts = await db.query(`EVENT#${evt.eventId}`, 'SHIFT#');
+
+    for (const shift of shifts) {
+      if (myShiftIds.has(shift.shiftId)) continue;
+
+      // Count current assignments for this shift
+      const assignments = await db.query(`SHIFT#${shift.shiftId}`, 'ASSIGN#');
+      const maxVol = shift.maxVolunteers || 0;
+      if (maxVol > 0 && assignments.length >= maxVol) continue;
+
+      availableShifts.push({
+        ...shift,
+        currentVolunteers: assignments.length,
+        event: {
+          eventId: evt.eventId,
+          name: evt.name,
+          date: evt.date,
+          description: evt.description || '',
+        },
+      });
+    }
+  }
+
+  // Sort by event date, then shift start time
+  availableShifts.sort((a, b) => {
+    const dateCompare = (a.event.date || '').localeCompare(b.event.date || '');
+    if (dateCompare !== 0) return dateCompare;
+    return (a.timeStart || '').localeCompare(b.timeStart || '');
+  });
+
+  return ok(availableShifts);
+}
+
+async function mySignUp(authContext, body) {
+  const { userId, orgId } = authContext;
+  const { shift_id: shiftId } = body;
+
+  if (!shiftId) {
+    return badRequest('shift_id is required');
+  }
+
+  // Find the shift — we need to find which event it belongs to
+  // The shift's pk is EVENT#<eventId>, sk is SHIFT#<shiftId>
+  // We don't know the eventId, so we need to look it up via the body or search.
+  // Since shifts have eventId stored on the item, we can use GSI or we check body.
+  // Alternative: the frontend may not pass eventId. Let's check if we can find the shift by scanning.
+  // Better approach: require event_id in the body, or use the shift item's eventId.
+  // For now, let's check if body has event_id, otherwise we need another approach.
+  const eventId = body.event_id;
+  if (!eventId) {
+    return badRequest('event_id is required');
+  }
+
+  const shiftItem = await db.get(`EVENT#${eventId}`, `SHIFT#${shiftId}`);
+  if (!shiftItem) return notFound('Shift not found');
+  if (shiftItem.orgId !== orgId) return forbidden();
+
+  // Check the user isn't already assigned
+  const existingAssignments = await db.query(`SHIFT#${shiftId}`, 'ASSIGN#');
+  const alreadyAssigned = existingAssignments.some((a) => a.userId === userId);
+  if (alreadyAssigned) {
+    return badRequest('You are already signed up for this shift');
+  }
+
+  // Check capacity
+  if (shiftItem.maxVolunteers && existingAssignments.length >= shiftItem.maxVolunteers) {
+    return badRequest('This shift is full');
+  }
+
+  // Get user and event details
+  const userItem = await db.get(`USER#${userId}`, 'METADATA');
+  if (!userItem) return notFound('User not found');
+
+  const eventItem = await db.get(`EVENT#${eventId}`, 'METADATA');
+
+  const assignmentId = uuidv4();
+  const now = new Date().toISOString();
+
+  const shiftAssign = {
+    pk: `SHIFT#${shiftId}`,
+    sk: `ASSIGN#${assignmentId}`,
+    entityType: 'Assignment',
+    assignmentId,
+    shiftId,
+    eventId,
+    userId,
+    orgId,
+    locationId: null,
+    locationName: null,
+    userName: userItem.name,
+    userEmail: userItem.email,
+    eventName: eventItem ? eventItem.name : '',
+    shiftTimeStart: shiftItem.timeStart,
+    shiftTimeEnd: shiftItem.timeEnd,
+    status: 'accepted',
+    createdAt: now,
+    updatedAt: now,
+  };
+
+  const userAssign = {
+    pk: `USER#${userId}`,
+    sk: `ASSIGN#${assignmentId}`,
+    entityType: 'Assignment',
+    assignmentId,
+    shiftId,
+    eventId,
+    userId,
+    orgId,
+    locationId: null,
+    locationName: null,
+    userName: userItem.name,
+    userEmail: userItem.email,
+    eventName: eventItem ? eventItem.name : '',
+    eventDate: eventItem ? eventItem.date : '',
+    shiftTimeStart: shiftItem.timeStart,
+    shiftTimeEnd: shiftItem.timeEnd,
+    shiftName: shiftItem.name || '',
+    status: 'accepted',
+    GSI1PK: `ASSIGN#${assignmentId}`,
+    GSI1SK: `USER#${userId}`,
+    createdAt: now,
+    updatedAt: now,
+  };
+
+  await db.transactWrite([
+    { Put: { Item: shiftAssign } },
+    { Put: { Item: userAssign } },
+  ]);
+
+  return created(shiftAssign);
+}
+
 module.exports = {
   listByEvent,
   createAssignment,
@@ -313,4 +461,6 @@ module.exports = {
   sendInvites,
   mySchedule,
   myUpdateAssignment,
+  myAvailableShifts,
+  mySignUp,
 };
