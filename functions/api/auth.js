@@ -5,9 +5,10 @@ const { generateMagicLink, verifyToken, createSession, FRONTEND_URL } = require(
 const { sendMagicLink } = require('../shared/email');
 
 async function handleMagicLink(body) {
-  const { email, orgId } = body;
+  const email = body.email;
+  const orgId = body.orgId || process.env.ORG_ID;
   if (!email || !orgId) {
-    return badRequest('email and orgId are required');
+    return badRequest('email is required');
   }
 
   const normalizedEmail = email.toLowerCase().trim();
@@ -78,8 +79,8 @@ async function handleMagicLink(body) {
   return ok({ message: 'Magic link sent. Check your email.' });
 }
 
-async function handleVerify(queryParams) {
-  const token = queryParams.token;
+async function handleVerify(queryParams, body) {
+  const token = (queryParams && queryParams.token) || (body && body.token);
   if (!token) {
     return badRequest('Token is required');
   }
@@ -91,15 +92,16 @@ async function handleVerify(queryParams) {
 
   const sessionToken = await createSession(result.userId, result.orgId, result.role);
 
-  // Redirect to frontend with session token
-  return {
-    statusCode: 302,
-    headers: {
-      Location: `${FRONTEND_URL}/auth/callback?session=${sessionToken}`,
-      'Access-Control-Allow-Origin': '*',
+  // Return session token and user info as JSON
+  return ok({
+    session_token: sessionToken,
+    user: {
+      userId: result.userId,
+      orgId: result.orgId,
+      email: result.email,
+      role: result.role,
     },
-    body: '',
-  };
+  });
 }
 
 async function handleLogout(authContext) {

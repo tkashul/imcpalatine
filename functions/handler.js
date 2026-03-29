@@ -23,6 +23,7 @@ const routes = [
   // Auth
   { method: 'POST', pattern: /^\/api\/auth\/magic-link$/, handler: 'authMagicLink' },
   { method: 'GET', pattern: /^\/api\/auth\/verify$/, handler: 'authVerify' },
+  { method: 'POST', pattern: /^\/api\/auth\/verify$/, handler: 'authVerify' },
   { method: 'POST', pattern: /^\/api\/auth\/logout$/, handler: 'authLogout' },
 
   // Events
@@ -104,7 +105,7 @@ exports.handler = async (event) => {
     }
 
     if (matched.handler === 'authVerify') {
-      return await handleVerify(queryParams);
+      return await handleVerify(queryParams, body);
     }
 
     if (matched.handler === 'authLogout') {
