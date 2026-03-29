@@ -58,8 +58,8 @@
 
       /* Quick Actions */
       html += '<div class="flex gap-2 mb-3">' +
-        '<a href="/frontend/admin/events.html" class="btn btn-primary">+ Create Event</a>' +
-        '<a href="/frontend/admin/volunteers.html" class="btn btn-secondary">+ Add Volunteer</a>' +
+        '<a href="admin/events.html" class="btn btn-primary">+ Create Event</a>' +
+        '<a href="admin/volunteers.html" class="btn btn-secondary">+ Add Volunteer</a>' +
       '</div>';
 
       /* Upcoming Events */
@@ -72,7 +72,7 @@
           var total = ev.total_slots || 0;
           var pct = Shared.coveragePercent(filled, total);
           var color = Shared.coverageColor(pct);
-          html += '<div class="card clickable" onclick="window.location.href=\'/frontend/admin/event-detail.html?id=' + _e(ev.id) + '\'">' +
+          html += '<div class="card clickable" onclick="window.location.href=\'admin/event-detail.html?id=' + _e(ev.id) + '\'">' +
             '<div class="card-header"><h3>' + _e(ev.name) + '</h3>' + Shared.statusBadge(Shared.getEventStatus(ev.date)) + '</div>' +
             '<div class="card-meta">' +
               '<span>' + _e(Shared.formatDate(ev.date)) + '</span>' +
@@ -145,7 +145,7 @@
         html += '<div class="card">' +
           '<div class="card-header">' +
             '<div>' +
-              '<h3 style="cursor:pointer" onclick="window.location.href=\'/frontend/admin/event-detail.html?id=' + _e(ev.id) + '\'">' + _e(ev.name) + '</h3>' +
+              '<h3 style="cursor:pointer" onclick="window.location.href=\'admin/event-detail.html?id=' + _e(ev.id) + '\'">' + _e(ev.name) + '</h3>' +
               '<div class="card-meta mt-1">' +
                 '<span>' + _e(Shared.formatDate(ev.date)) + '</span>' +
                 '<span>' + (ev.shift_count || 0) + ' shifts</span>' +
@@ -159,7 +159,7 @@
           (ev.description ? '<p class="text-dim" style="font-size:0.88rem;margin-bottom:8px">' + _e(ev.description) + '</p>' : '') +
           '<div class="progress-bar"><div class="progress-fill ' + color + '" style="width:' + pct + '%"></div></div>' +
           '<div class="card-actions">' +
-            '<a href="/frontend/admin/event-detail.html?id=' + _e(ev.id) + '" class="btn btn-sm btn-primary">Manage</a>' +
+            '<a href="admin/event-detail.html?id=' + _e(ev.id) + '" class="btn btn-sm btn-primary">Manage</a>' +
             '<button class="btn btn-sm btn-secondary" onclick="Admin.showEventForm(' + "'" + _e(ev.id) + "'" + ')">Edit</button>' +
             '<button class="btn btn-sm btn-danger" onclick="Admin.deleteEvent(' + "'" + _e(ev.id) + "','" + _e(ev.name) + "'" + ')">Delete</button>' +
           '</div>' +
@@ -271,7 +271,7 @@
     var printBtn = document.getElementById('btn-print-day-sheet');
     if (printBtn) {
       printBtn.addEventListener('click', function () {
-        window.open('/frontend/print/day-sheet.html?id=' + eventId, '_blank');
+        window.open('print/day-sheet.html?id=' + eventId, '_blank');
       });
     }
 
@@ -327,7 +327,7 @@
     if (!ev) return;
     var headerEl = document.getElementById('event-header');
     headerEl.innerHTML =
-      '<div class="breadcrumb"><a href="/frontend/admin/events.html">\u2190 Events</a><span class="sep">/</span><span>' + _e(ev.name) + '</span></div>' +
+      '<div class="breadcrumb"><a href="admin/events.html">\u2190 Events</a><span class="sep">/</span><span>' + _e(ev.name) + '</span></div>' +
       '<div class="page-header">' +
         '<div><h1>' + _e(ev.name) + '</h1>' +
         '<p class="text-dim">' + _e(Shared.formatDate(ev.date)) + (ev.description ? ' \u2014 ' + _e(ev.description) : '') + '</p></div>' +

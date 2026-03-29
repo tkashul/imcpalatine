@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Dashboard - IMC Volunteer Planner</title>
+  <title>Volunteers - IMC Volunteer Planner</title>
   <link rel="stylesheet" href="../css/style.css">
 </head>
 <body>
@@ -21,13 +21,13 @@
         <div class="org-name">Immaculate Conception Parish</div>
       </div>
       <div class="sidebar-nav">
-        <a href="/frontend/admin/dashboard.html" class="active">
+        <a href="admin/dashboard.html">
           <span class="nav-icon">#</span> Dashboard
         </a>
-        <a href="/frontend/admin/events.html">
+        <a href="admin/events.html">
           <span class="nav-icon">@</span> Events
         </a>
-        <a href="/frontend/admin/volunteers.html">
+        <a href="admin/volunteers.html" class="active">
           <span class="nav-icon">*</span> Volunteers
         </a>
         <div class="nav-divider"></div>
@@ -42,9 +42,19 @@
     <!-- Main content -->
     <main class="main-content">
       <div class="page-header">
-        <h1>Dashboard</h1>
+        <h1>Volunteers</h1>
+        <div class="page-actions">
+          <button class="btn btn-primary" id="btn-add-volunteer">+ Add Volunteer</button>
+        </div>
       </div>
-      <div id="dashboard-content"></div>
+
+      <!-- Search -->
+      <div class="search-wrapper mb-3" style="max-width:400px">
+        <span class="search-icon">?</span>
+        <input type="text" class="form-input" id="volunteer-search" placeholder="Search by name, email, or phone...">
+      </div>
+
+      <div id="volunteers-content"></div>
     </main>
   </div>
 
@@ -53,7 +63,7 @@
   <script src="../js/auth.js"></script>
   <script src="../js/admin.js"></script>
   <script>
-    Admin.initDashboard();
+    Admin.initVolunteers();
   </script>
 </body>
 </html>

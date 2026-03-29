@@ -52,7 +52,7 @@
 
     if (res.status === 401) {
       clearSession();
-      window.location.href = '/frontend/index.html';
+      window.location.href = 'index.html';
       throw new Error('Session expired. Please sign in again.');
     }
 

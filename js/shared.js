@@ -240,7 +240,7 @@
   /* ---- Auth guard ---- */
   function requireAuth() {
     if (!window.API || !window.API.getToken()) {
-      window.location.href = '/frontend/index.html';
+      window.location.href = 'index.html';
       return false;
     }
     return true;
@@ -249,7 +249,7 @@
   function requireAdmin() {
     var user = window.API ? window.API.getUser() : null;
     if (!user || user.role !== 'admin') {
-      window.location.href = '/frontend/index.html';
+      window.location.href = 'index.html';
       return false;
     }
     return true;
