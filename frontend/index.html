@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sign In - IMC Volunteer Planner</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="auth-page">
+
+  <div class="auth-card">
+    <div class="auth-logo">
+      <span class="logo-icon">IMC</span>
+      <span class="logo-name">Immaculate Conception Ukrainian Catholic Parish</span>
+    </div>
+
+    <div id="login-form">
+      <h1>Volunteer Planner</h1>
+      <p class="subtitle">Sign in with your email to manage or view your volunteer schedule.</p>
+
+      <form id="magic-link-form" onsubmit="return false;">
+        <div class="form-group" style="text-align:left">
+          <label>Email Address</label>
+          <input type="email" class="form-input" id="login-email" placeholder="you@example.com" required autofocus>
+        </div>
+        <button type="submit" class="btn btn-primary w-full" id="login-btn">
+          Send Sign-In Link
+        </button>
+      </form>
+
+      <div class="magic-link-info">
+        <strong>How does this work?</strong><br>
+        We'll send a secure, one-time sign-in link to your email. Click the link and you're in — no password needed.
+      </div>
+    </div>
+
+    <div id="login-success" style="display:none">
+      <div class="success-message">
+        <strong>Check your email!</strong>
+        We sent a sign-in link to <strong id="sent-email"></strong>. Click the link in the email to access your account.
+      </div>
+      <p class="text-dim" style="margin-top:16px;font-size:0.85rem">
+        Didn't receive it? Check your spam folder, or
+        <a href="#" id="resend-link">send another link</a>.
+      </p>
+    </div>
+  </div>
+
+  <script src="js/api.js"></script>
+  <script src="js/shared.js"></script>
+  <script src="js/auth.js"></script>
+  <script>
+    (function () {
+      Auth.init();
+
+      var form = document.getElementById('magic-link-form');
+      var btn = document.getElementById('login-btn');
+      var emailInput = document.getElementById('login-email');
+      var loginForm = document.getElementById('login-form');
+      var loginSuccess = document.getElementById('login-success');
+      var sentEmail = document.getElementById('sent-email');
+      var resendLink = document.getElementById('resend-link');
+
+      form.addEventListener('submit', function () {
+        handleLogin();
+      });
+
+      btn.addEventListener('click', function () {
+        handleLogin();
+      });
+
+      function handleLogin() {
+        var email = emailInput.value.trim();
+        if (!email) {
+          Shared.showToast('Please enter your email address.', true);
+          return;
+        }
+
+        btn.disabled = true;
+        btn.textContent = 'Sending...';
+
+        Auth.login(email).then(function () {
+          loginForm.style.display = 'none';
+          loginSuccess.style.display = 'block';
+          sentEmail.textContent = email;
+        }).catch(function (err) {
+          Shared.showToast(err.message || 'Failed to send sign-in link.', true);
+          btn.disabled = false;
+          btn.textContent = 'Send Sign-In Link';
+        });
+      }
+
+      resendLink.addEventListener('click', function (e) {
+        e.preventDefault();
+        loginForm.style.display = 'block';
+        loginSuccess.style.display = 'none';
+        btn.disabled = false;
+        btn.textContent = 'Send Sign-In Link';
+        emailInput.focus();
+      });
+    })();
+  </script>
+</body>
+</html>

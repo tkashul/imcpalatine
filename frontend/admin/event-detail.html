@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Event Detail - IMC Volunteer Planner</title>
+  <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+
+  <div class="admin-layout">
+
+    <!-- Mobile toggle -->
+    <button class="sidebar-toggle">=</button>
+    <div class="sidebar-overlay"></div>
+
+    <!-- Sidebar -->
+    <nav class="sidebar">
+      <div class="sidebar-header">
+        <div class="org-icon">IMC</div>
+        <div class="org-name">Immaculate Conception Parish</div>
+      </div>
+      <div class="sidebar-nav">
+        <a href="/frontend/admin/dashboard.html">
+          <span class="nav-icon">#</span> Dashboard
+        </a>
+        <a href="/frontend/admin/events.html" class="active">
+          <span class="nav-icon">@</span> Events
+        </a>
+        <a href="/frontend/admin/volunteers.html">
+          <span class="nav-icon">*</span> Volunteers
+        </a>
+        <div class="nav-divider"></div>
+      </div>
+      <div class="sidebar-footer">
+        <a href="#" onclick="Auth.logout(); return false;">
+          <span class="nav-icon">&larr;</span> Sign Out
+        </a>
+      </div>
+    </nav>
+
+    <!-- Main content -->
+    <main class="main-content">
+      <!-- Event header rendered dynamically -->
+      <div id="event-header"></div>
+
+      <!-- Action buttons -->
+      <div class="flex gap-1 mb-3 flex-wrap no-print">
+        <button class="btn btn-primary" id="btn-send-all-invites">Send All Invites</button>
+        <button class="btn btn-secondary" id="btn-print-day-sheet">Print Day Sheet</button>
+      </div>
+
+      <!-- Tabs -->
+      <div class="tabs no-print">
+        <button class="tab-btn active" data-tab-group="event-tabs" data-tab="shifts" onclick="Shared.switchTab('event-tabs', 'shifts')">
+          Shifts &amp; Assignments
+        </button>
+        <button class="tab-btn" data-tab-group="event-tabs" data-tab="locations" onclick="Shared.switchTab('event-tabs', 'locations')">
+          Locations
+        </button>
+        <button class="tab-btn" data-tab-group="event-tabs" data-tab="coverage" onclick="Shared.switchTab('event-tabs', 'coverage')">
+          Coverage Overview
+        </button>
+      </div>
+
+      <!-- Tab content -->
+      <div class="tab-content active" data-tab-content-group="event-tabs" data-tab-id="shifts">
+        <div id="shifts-content"></div>
+      </div>
+      <div class="tab-content" data-tab-content-group="event-tabs" data-tab-id="locations">
+        <div id="locations-content"></div>
+      </div>
+      <div class="tab-content" data-tab-content-group="event-tabs" data-tab-id="coverage">
+        <div id="coverage-content"></div>
+      </div>
+
+      <!-- General loading / error -->
+      <div id="event-detail-content"></div>
+    </main>
+  </div>
+
+  <script src="../js/api.js"></script>
+  <script src="../js/shared.js"></script>
+  <script src="../js/auth.js"></script>
+  <script src="../js/admin.js"></script>
+  <script>
+    Admin.initEventDetail();
+  </script>
+</body>
+</html>

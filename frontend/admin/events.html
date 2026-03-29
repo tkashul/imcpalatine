@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Events - IMC Volunteer Planner</title>
+  <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+
+  <div class="admin-layout">
+
+    <!-- Mobile toggle -->
+    <button class="sidebar-toggle">=</button>
+    <div class="sidebar-overlay"></div>
+
+    <!-- Sidebar -->
+    <nav class="sidebar">
+      <div class="sidebar-header">
+        <div class="org-icon">IMC</div>
+        <div class="org-name">Immaculate Conception Parish</div>
+      </div>
+      <div class="sidebar-nav">
+        <a href="/frontend/admin/dashboard.html">
+          <span class="nav-icon">#</span> Dashboard
+        </a>
+        <a href="/frontend/admin/events.html" class="active">
+          <span class="nav-icon">@</span> Events
+        </a>
+        <a href="/frontend/admin/volunteers.html">
+          <span class="nav-icon">*</span> Volunteers
+        </a>
+        <div class="nav-divider"></div>
+      </div>
+      <div class="sidebar-footer">
+        <a href="#" onclick="Auth.logout(); return false;">
+          <span class="nav-icon">&larr;</span> Sign Out
+        </a>
+      </div>
+    </nav>
+
+    <!-- Main content -->
+    <main class="main-content">
+      <div class="page-header">
+        <h1>Events</h1>
+        <div class="page-actions">
+          <button class="btn btn-primary" id="btn-create-event">+ Create Event</button>
+        </div>
+      </div>
+      <div id="events-content"></div>
+    </main>
+  </div>
+
+  <script src="../js/api.js"></script>
+  <script src="../js/shared.js"></script>
+  <script src="../js/auth.js"></script>
+  <script src="../js/admin.js"></script>
+  <script>
+    Admin.initEvents();
+  </script>
+</body>
+</html>

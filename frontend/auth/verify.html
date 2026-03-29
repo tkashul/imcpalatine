@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Signing In - IMC Volunteer Planner</title>
+  <link rel="stylesheet" href="../css/style.css">
+</head>
+<body class="auth-page">
+
+  <div class="auth-card">
+    <div class="auth-logo">
+      <span class="logo-icon">IMC</span>
+      <span class="logo-name">Immaculate Conception Ukrainian Catholic Parish</span>
+    </div>
+
+    <div id="verify-status" class="auth-loading">
+      <div class="spinner"></div>
+      <p>Signing you in...</p>
+    </div>
+  </div>
+
+  <script src="../js/api.js"></script>
+  <script src="../js/shared.js"></script>
+  <script src="../js/auth.js"></script>
+  <script>
+    Auth.init();
+  </script>
+</body>
+</html>

@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Day Sheet - IMC Volunteer Planner</title>
+  <link rel="stylesheet" href="../css/style.css">
+  <style>
+    body {
+      background: #fff;
+      color: #000;
+      font-size: 13px;
+    }
+    @media screen {
+      body { padding: 0; margin: 0; }
+    }
+    .screen-toolbar {
+      background: #1a3a6b;
+      color: #fff;
+      padding: 12px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .screen-toolbar h2 {
+      font-size: 16px;
+      font-weight: 600;
+    }
+    .btn-print {
+      background: #d4a843;
+      color: #1a1d27;
+      border: none;
+      padding: 8px 24px;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .btn-print:hover { background: #c49a3a; }
+    .btn-back {
+      color: rgba(255,255,255,0.7);
+      text-decoration: none;
+      font-size: 14px;
+      margin-left: 12px;
+    }
+    .btn-back:hover { color: #fff; }
+    @media print {
+      .screen-toolbar { display: none !important; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Screen-only toolbar -->
+  <div class="screen-toolbar">
+    <h2>Event Day Sheet</h2>
+    <div>
+      <button class="btn-print" id="btnPrint">Print This Page</button>
+      <a class="btn-back" id="backLink" href="#">&larr; Back to Event</a>
+    </div>
+  </div>
+
+  <div class="day-sheet" id="pageContent">
+    <div style="text-align:center;padding:60px 0;color:#999;font-size:16px">Loading event data...</div>
+  </div>
+
+  <script src="../js/api.js"></script>
+  <script src="../js/shared.js"></script>
+  <script src="../js/auth.js"></script>
+  <script>
+  (function () {
+    'use strict';
+
+    var esc = Shared.escapeHtml;
+
+    document.getElementById('btnPrint').addEventListener('click', function () {
+      window.print();
+    });
+
+    /* Support both ?id= and ?eventId= for backward compat */
+    var params = new URLSearchParams(window.location.search);
+    var eventId = params.get('id') || params.get('eventId');
+
+    if (eventId) {
+      document.getElementById('backLink').href = '/frontend/admin/event-detail.html?id=' + eventId;
+    }
+
+    if (!eventId) {
+      showError('No event specified. Add ?id=xxx to the URL.');
+      return;
+    }
+
+    loadDaySheet(eventId);
+
+    async function loadDaySheet(eventId) {
+      try {
+        var results = await Promise.all([
+          API.getEvent(eventId),
+          API.listShifts(eventId).catch(function () { return []; }),
+          API.listLocations(eventId).catch(function () { return []; }),
+          API.listAssignmentsByEvent(eventId).catch(function () { return []; }),
+          API.listVolunteers().catch(function () { return []; })
+        ]);
+
+        var evtRaw = results[0];
+        var shiftsRaw = results[1];
+        var locsRaw = results[2];
+        var assignmentsRaw = results[3];
+        var volunteersRaw = results[4];
+
+        var event = evtRaw.event || evtRaw;
+        if (!event || !event.name) {
+          showError('Event not found.');
+          return;
+        }
+
+        var shifts = Array.isArray(shiftsRaw) ? shiftsRaw : (shiftsRaw.shifts || []);
+        var locations = Array.isArray(locsRaw) ? locsRaw : (locsRaw.locations || []);
+        var assignments = Array.isArray(assignmentsRaw) ? assignmentsRaw : (assignmentsRaw.assignments || []);
+        var volunteers = Array.isArray(volunteersRaw) ? volunteersRaw : (volunteersRaw.volunteers || []);
+
+        /* Build volunteer lookup */
+        var volMap = {};
+        volunteers.forEach(function (v) {
+          volMap[v.id] = v;
+        });
+
+        /* Build location lookup */
+        var locMap = {};
+        locations.forEach(function (loc) {
+          var id = loc.location_id || loc.locationId || loc.id || '';
+          locMap[id] = loc.name || loc.location_name || '';
+        });
+
+        /* Group assignments by shift */
+        var assignByShift = {};
+        assignments.forEach(function (a) {
+          var sid = a.shift_id || a.shiftId || '';
+          if (!assignByShift[sid]) assignByShift[sid] = [];
+          assignByShift[sid].push(a);
+        });
+
+        renderDaySheet(event, shifts, locations, locMap, assignByShift, volMap);
+
+        /* Auto-print after short delay */
+        setTimeout(function () {
+          window.print();
+        }, 600);
+
+      } catch (err) {
+        showError('Failed to load event data: ' + err.message);
+      }
+    }
+
+    function renderDaySheet(event, shifts, locations, locMap, assignByShift, volMap) {
+      shifts.sort(function (a, b) {
+        var sa = a.start_time || a.startTime || '';
+        var sb = b.start_time || b.startTime || '';
+        return sa.localeCompare(sb);
+      });
+
+      var html = '';
+
+      /* Page header */
+      html += '<h1>' + esc(event.name || 'Event') + '</h1>';
+      html += '<div class="ds-date">' + esc(Shared.formatDate(event.date || event.event_date || '')) + '</div>';
+
+      if (event.description) {
+        html += '<p style="margin-bottom:20px;font-size:11pt;color:#444">' + esc(event.description) + '</p>';
+      }
+
+      /* Each shift */
+      if (shifts.length === 0) {
+        html += '<p style="font-style:italic;color:#666;margin-top:24px">No shifts defined for this event.</p>';
+      }
+
+      shifts.forEach(function (shift) {
+        html += '<div class="ds-shift">';
+
+        var shiftId = shift.shift_id || shift.shiftId || shift.id || '';
+        var maxVol = shift.max_volunteers || shift.maxVolunteers || 10;
+        var timeLabel = '';
+        var st = shift.start_time || shift.startTime || '';
+        var et = shift.end_time || shift.endTime || '';
+        timeLabel = Shared.formatTime(st);
+        if (et) timeLabel += ' \u2013 ' + Shared.formatTime(et);
+
+        var shiftVols = assignByShift[shiftId] || [];
+        html += '<h2>' + esc(timeLabel) + ' (' + shiftVols.length + '/' + maxVol + ' volunteers)</h2>';
+
+        html += '<table>';
+        html += '<thead><tr>';
+        html += '<th style="width:30px">#</th>';
+        html += '<th>Volunteer Name</th>';
+        html += '<th>Phone</th>';
+        html += '<th>Location</th>';
+        html += '<th>Status</th>';
+        html += '<th>Notes</th>';
+        html += '</tr></thead>';
+        html += '<tbody>';
+
+        /* Sort: accepted first, then pending, then declined */
+        var statusOrder = { accepted: 0, confirmed: 0, pending: 1, invited: 2, declined: 3 };
+        shiftVols.sort(function (a, b) {
+          var oa = statusOrder[a.status] !== undefined ? statusOrder[a.status] : 2;
+          var ob = statusOrder[b.status] !== undefined ? statusOrder[b.status] : 2;
+          if (oa !== ob) return oa - ob;
+          var na = getVolName(a, volMap).toLowerCase();
+          var nb = getVolName(b, volMap).toLowerCase();
+          return na.localeCompare(nb);
+        });
+
+        var rowNum = 1;
+        shiftVols.forEach(function (a) {
+          var status = a.status || 'pending';
+          var locId = a.location_id || a.locationId || '';
+          var locName = a.location_name || a.locationName || locMap[locId] || '';
+          var name = getVolName(a, volMap);
+          var phone = getVolPhone(a, volMap);
+          var notes = a.notes || '';
+
+          var statusStyle = '';
+          if (status === 'accepted' || status === 'confirmed') statusStyle = 'color:#2e7d32;font-weight:600';
+          if (status === 'pending') statusStyle = 'color:#e65100;font-weight:600';
+          if (status === 'invited') statusStyle = 'color:#1565c0;font-weight:600';
+          if (status === 'declined') statusStyle = 'color:#c62828;text-decoration:line-through';
+
+          html += '<tr>';
+          html += '<td style="text-align:center;color:#999">' + rowNum + '</td>';
+          html += '<td>' + esc(name) + '</td>';
+          html += '<td>' + esc(Shared.formatPhone(phone)) + '</td>';
+          html += '<td>' + esc(locName) + '</td>';
+          html += '<td><span style="' + statusStyle + '">' + esc(capitalize(status)) + '</span></td>';
+          html += '<td>' + esc(notes) + '</td>';
+          html += '</tr>';
+          rowNum++;
+        });
+
+        /* Empty rows for walk-ins */
+        var emptyRows = Math.max(3, maxVol - shiftVols.length);
+        for (var i = 0; i < emptyRows; i++) {
+          html += '<tr class="ds-empty-row">';
+          html += '<td style="text-align:center;color:#999">' + rowNum + '</td>';
+          html += '<td></td><td></td><td></td><td></td><td></td>';
+          html += '</tr>';
+          rowNum++;
+        }
+
+        html += '</tbody></table>';
+        html += '</div>';
+      });
+
+      /* Locations */
+      if (locations.length > 0) {
+        html += '<div class="ds-section">';
+        html += '<h3>Locations / Zones</h3>';
+        html += '<ul>';
+        locations.forEach(function (loc) {
+          var name = loc.name || loc.location_name || '';
+          var desc = loc.description || '';
+          html += '<li><strong>' + esc(name) + '</strong>';
+          if (desc) html += ' \u2014 ' + esc(desc);
+          html += '</li>';
+        });
+        html += '</ul>';
+        html += '</div>';
+      }
+
+      /* Emergency contacts */
+      html += '<div class="ds-section">';
+      html += '<h3>Emergency Contacts</h3>';
+      html += '<ul>';
+      html += '<li><strong>Event Coordinator:</strong> _____________________ Phone: _____________________</li>';
+      html += '<li><strong>Parish Office:</strong> _____________________ Phone: _____________________</li>';
+      html += '<li><strong>Emergency:</strong> 911</li>';
+      html += '</ul>';
+      html += '</div>';
+
+      /* Notes area */
+      html += '<div class="ds-section">';
+      html += '<h3>Notes</h3>';
+      html += '<div style="border:1px solid #ccc;min-height:80px;border-radius:4px"></div>';
+      html += '</div>';
+
+      document.getElementById('pageContent').innerHTML = html;
+    }
+
+    function getVolName(assignment, volMap) {
+      if (assignment.volunteer_name || assignment.volunteerName) {
+        return assignment.volunteer_name || assignment.volunteerName;
+      }
+      var volId = assignment.volunteer_id || assignment.volunteerId || '';
+      var vol = volMap[volId];
+      return vol ? (vol.name || '') : 'Unknown';
+    }
+
+    function getVolPhone(assignment, volMap) {
+      if (assignment.phone || assignment.volunteer_phone) {
+        return assignment.phone || assignment.volunteer_phone;
+      }
+      var volId = assignment.volunteer_id || assignment.volunteerId || '';
+      var vol = volMap[volId];
+      return vol ? (vol.phone || '') : '';
+    }
+
+    function showError(msg) {
+      document.getElementById('pageContent').innerHTML =
+        '<p style="color:red;text-align:center;padding:40px">' + esc(msg) + '</p>';
+    }
+
+    function capitalize(str) {
+      if (!str) return '';
+      return str.charAt(0).toUpperCase() + str.slice(1);
+    }
+
+  })();
+  </script>
+</body>
+</html>

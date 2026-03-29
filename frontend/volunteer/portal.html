@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Schedule - IMC Volunteer Planner</title>
+  <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+
+  <div class="portal-layout">
+
+    <!-- Header -->
+    <header class="portal-header">
+      <div class="header-left">
+        <span class="header-brand">IMC Palatine</span>
+        <div class="tabs" style="border-bottom:none;margin-bottom:0">
+          <button class="tab-btn active" data-tab-group="portal-tabs" data-tab="schedule" onclick="Portal.switchTab('schedule')">
+            My Schedule
+          </button>
+          <button class="tab-btn" data-tab-group="portal-tabs" data-tab="available" onclick="Portal.switchTab('available')">
+            Available Shifts
+          </button>
+        </div>
+      </div>
+      <div class="header-right">
+        <span id="portal-user-name"></span>
+        <a href="#" onclick="Auth.logout(); return false;" style="color:var(--text-dim)">Sign Out</a>
+      </div>
+    </header>
+
+    <!-- Content -->
+    <div class="portal-content">
+
+      <!-- My Schedule tab -->
+      <div class="tab-content active" data-tab-content-group="portal-tabs" data-tab-id="schedule">
+        <div class="section-title">My Upcoming Schedule</div>
+        <div id="my-schedule-content"></div>
+      </div>
+
+      <!-- Available Shifts tab -->
+      <div class="tab-content" data-tab-content-group="portal-tabs" data-tab-id="available">
+        <div class="section-title">Open Shifts That Need Volunteers</div>
+        <div id="available-shifts-content"></div>
+      </div>
+
+    </div>
+  </div>
+
+  <script src="../js/api.js"></script>
+  <script src="../js/shared.js"></script>
+  <script src="../js/auth.js"></script>
+  <script>
+    (function () {
+      'use strict';
+
+      var _e = Shared.escapeHtml;
+
+      var Portal = {};
+
+      Portal.init = function () {
+        if (!Shared.requireAuth()) return;
+
+        var user = API.getUser();
+        var nameEl = document.getElementById('portal-user-name');
+        if (nameEl && user) {
+          nameEl.textContent = user.name || user.email || '';
+        }
+
+        Portal.loadSchedule();
+        Portal.loadAvailableShifts();
+      };
+
+      Portal.switchTab = function (tabId) {
+        Shared.switchTab('portal-tabs', tabId);
+      };
+
+      /* ============================
+         My Schedule
+         ============================ */
+      Portal.loadSchedule = function () {
+        var container = document.getElementById('my-schedule-content');
+        container.innerHTML = Shared.renderLoading();
+
+        API.mySchedule().then(function (data) {
+          var assignments = Array.isArray(data) ? data : (data && data.assignments ? data.assignments : []);
+
+          if (assignments.length === 0) {
+            container.innerHTML = Shared.renderEmpty('You have no upcoming assignments. Check the Available Shifts tab to sign up!');
+            return;
+          }
+
+          /* Sort by date then shift start */
+          assignments.sort(function (a, b) {
+            var da = a.event_date || '';
+            var db = b.event_date || '';
+            if (da !== db) return da < db ? -1 : 1;
+            var sa = a.shift_start || '';
+            var sb = b.shift_start || '';
+            return sa < sb ? -1 : 1;
+          });
+
+          var today = new Date().toISOString().slice(0, 10);
+          var upcoming = assignments.filter(function (a) { return (a.event_date || '') >= today; });
+          var past = assignments.filter(function (a) { return (a.event_date || '') < today; });
+
+          /* Group by event */
+          function groupByEvent(items) {
+            var grouped = {};
+            var order = [];
+            items.forEach(function (a) {
+              var key = a.event_id || 'unknown';
+              if (!grouped[key]) {
+                grouped[key] = { event_name: a.event_name || 'Event', event_date: a.event_date || '', items: [] };
+                order.push(key);
+              }
+              grouped[key].items.push(a);
+            });
+            return order.map(function (k) { return grouped[k]; });
+          }
+
+          var html = '';
+
+          if (upcoming.length > 0) {
+            groupByEvent(upcoming).forEach(function (group) {
+              html += '<div class="card mb-2">' +
+                '<div class="card-header"><h3>' + _e(group.event_name) + '</h3>' +
+                '<span class="text-dim">' + _e(Shared.formatDate(group.event_date)) + '</span></div>';
+
+              group.items.forEach(function (a) {
+                html += renderAssignmentRow(a, false);
+              });
+
+              html += '</div>';
+            });
+          } else {
+            html += Shared.renderEmpty('No upcoming shifts assigned.');
+          }
+
+          /* Past assignments (collapsed) */
+          if (past.length > 0) {
+            html += '<div class="mt-3">' +
+              '<button class="btn btn-ghost" id="past-toggle" style="padding-left:0">' +
+                '\u25B6 Past Assignments (' + past.length + ')' +
+              '</button>' +
+              '<div id="past-section" style="display:none">';
+
+            groupByEvent(past).forEach(function (group) {
+              html += '<div class="card mb-2" style="opacity:0.6">' +
+                '<div class="card-header"><h3>' + _e(group.event_name) + '</h3>' +
+                '<span class="text-dim">' + _e(Shared.formatDate(group.event_date)) + '</span></div>';
+
+              group.items.forEach(function (a) {
+                html += renderAssignmentRow(a, true);
+              });
+
+              html += '</div>';
+            });
+
+            html += '</div></div>';
+          }
+
+          container.innerHTML = html;
+
+          /* Past toggle */
+          var toggle = document.getElementById('past-toggle');
+          if (toggle) {
+            toggle.addEventListener('click', function () {
+              var section = document.getElementById('past-section');
+              var isHidden = section.style.display === 'none';
+              section.style.display = isHidden ? 'block' : 'none';
+              toggle.textContent = (isHidden ? '\u25BC' : '\u25B6') + ' Past Assignments (' + past.length + ')';
+            });
+          }
+        }).catch(function (err) {
+          container.innerHTML = '<div class="empty-state"><div class="empty-icon">\u26A0</div>' +
+            '<div class="empty-title">Error loading schedule</div>' +
+            '<div class="empty-desc">' + _e(err.message) + '</div></div>';
+        });
+      };
+
+      function renderAssignmentRow(a, isPast) {
+        var html = '<div class="assignment-row">' +
+          '<div class="vol-name">' +
+            _e(Shared.formatTime(a.shift_start || a.shiftStart || '')) + ' \u2013 ' + _e(Shared.formatTime(a.shift_end || a.shiftEnd || '')) +
+          '</div>' +
+          '<div class="vol-location text-dim">' + _e(a.location_name || a.locationName || 'No location') + '</div>' +
+          '<div class="vol-status">' + Shared.statusBadge(a.status || 'pending') + '</div>' +
+          '<div class="vol-actions">';
+
+        var status = a.status || 'pending';
+        var assignId = a.assignment_id || a.assignmentId || a.id || '';
+
+        if (!isPast && (status === 'pending' || status === 'invited')) {
+          html += '<button class="btn btn-xs btn-success" onclick="Portal.respond(\'' + _e(assignId) + '\', \'accepted\')">Accept</button> ' +
+            '<button class="btn btn-xs btn-danger" onclick="Portal.respond(\'' + _e(assignId) + '\', \'declined\')">Decline</button>';
+        } else if (status === 'accepted' || status === 'confirmed') {
+          html += '<span class="text-green" style="font-size:0.82rem">Confirmed</span>';
+        }
+
+        html += '</div></div>';
+        return html;
+      }
+
+      Portal.respond = function (assignmentId, status) {
+        API.myUpdateAssignment(assignmentId, { status: status }).then(function () {
+          Shared.showToast(status === 'accepted' ? 'Shift accepted!' : 'Shift declined.');
+          Portal.loadSchedule();
+        }).catch(function (err) {
+          Shared.showToast(err.message, true);
+        });
+      };
+
+      /* ============================
+         Available Shifts
+         ============================ */
+      Portal.loadAvailableShifts = function () {
+        var container = document.getElementById('available-shifts-content');
+        container.innerHTML = Shared.renderLoading();
+
+        API.myAvailableShifts().then(function (data) {
+          var items = Array.isArray(data) ? data : (data && data.events ? data.events : (data && data.shifts ? data.shifts : []));
+
+          if (items.length === 0) {
+            container.innerHTML = Shared.renderEmpty('No open shifts available right now. Check back closer to the next event!');
+            return;
+          }
+
+          var html = '';
+
+          /* Handle both flat shift list and grouped event list */
+          if (items[0] && items[0].shifts) {
+            /* Grouped by event */
+            items.forEach(function (evt) {
+              var evtDate = evt.date || evt.event_date || '';
+              var today = new Date().toISOString().slice(0, 10);
+              if (evtDate < today) return;
+
+              var shifts = evt.shifts || [];
+              var hasOpen = false;
+              var shiftHtml = '';
+
+              shifts.forEach(function (s) {
+                var maxVol = s.max_volunteers || s.maxVolunteers || 0;
+                var assigned = s.assigned_count || s.assignedCount || 0;
+                var spotsLeft = maxVol - assigned;
+                if (spotsLeft <= 0) return;
+                hasOpen = true;
+
+                shiftHtml += '<div class="card mb-1">' +
+                  '<div class="flex justify-between items-center flex-wrap gap-1">' +
+                    '<div>' +
+                      '<strong>' + _e(Shared.formatTime(s.start_time || s.startTime || '')) + ' \u2013 ' +
+                        _e(Shared.formatTime(s.end_time || s.endTime || '')) + '</strong>' +
+                      '<div class="text-dim" style="font-size:0.82rem">' + spotsLeft + ' spot' + (spotsLeft !== 1 ? 's' : '') + ' remaining</div>' +
+                    '</div>' +
+                    '<button class="btn btn-sm btn-success" onclick="Portal.signUp(\'' + _e(s.shift_id || s.shiftId || s.id || '') + '\')">Sign Up</button>' +
+                  '</div>' +
+                '</div>';
+              });
+
+              if (hasOpen) {
+                html += '<div class="mb-3">' +
+                  '<h3 style="margin-bottom:4px">' + _e(evt.name || evt.event_name || '') + '</h3>' +
+                  '<p class="text-dim mb-1" style="font-size:0.85rem">' + _e(Shared.formatDate(evtDate)) + '</p>' +
+                  shiftHtml +
+                '</div>';
+              }
+            });
+          } else {
+            /* Flat shift list */
+            items.forEach(function (s) {
+              var spotsLeft = (s.max_volunteers || 0) - (s.current_count || 0);
+              if (spotsLeft < 0) spotsLeft = 0;
+
+              html += '<div class="card mb-2">' +
+                '<div class="card-header">' +
+                  '<h3>' + _e(s.event_name || 'Event') + '</h3>' +
+                  '<span class="text-dim">' + _e(Shared.formatDate(s.event_date || '')) + '</span>' +
+                '</div>' +
+                '<div class="card-meta">' +
+                  '<span>' + _e(Shared.formatTime(s.start_time || '')) + ' \u2013 ' + _e(Shared.formatTime(s.end_time || '')) + '</span>' +
+                  '<span>' + spotsLeft + ' spot' + (spotsLeft !== 1 ? 's' : '') + ' remaining</span>' +
+                '</div>' +
+                (s.location_name ? '<p class="text-dim" style="font-size:0.85rem">Location: ' + _e(s.location_name) + '</p>' : '') +
+                '<div class="card-actions">' +
+                  '<button class="btn btn-sm btn-success" onclick="Portal.signUp(\'' + _e(s.id || s.shift_id || '') + '\')">Sign Up</button>' +
+                '</div>' +
+              '</div>';
+            });
+          }
+
+          if (!html) {
+            html = Shared.renderEmpty('All shifts are fully staffed. Thank you!');
+          }
+
+          container.innerHTML = html;
+        }).catch(function (err) {
+          container.innerHTML = '<div class="empty-state"><div class="empty-icon">\u26A0</div>' +
+            '<div class="empty-title">Error loading available shifts</div>' +
+            '<div class="empty-desc">' + _e(err.message) + '</div></div>';
+        });
+      };
+
+      Portal.signUp = function (shiftId) {
+        API.mySignUp(shiftId).then(function () {
+          Shared.showToast('You\'re signed up! Check My Schedule for details.');
+          Portal.loadSchedule();
+          Portal.loadAvailableShifts();
+          Shared.switchTab('portal-tabs', 'schedule');
+        }).catch(function (err) {
+          Shared.showToast(err.message, true);
+        });
+      };
+
+      window.Portal = Portal;
+      Portal.init();
+    })();
+  </script>
+</body>
+</html>
