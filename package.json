@@ -1,0 +1,26 @@
+{
+  "name": "imc-volunteer-planner",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/tkashul/imcpalatine.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/tkashul/imcpalatine/issues"
+  },
+  "homepage": "https://github.com/tkashul/imcpalatine#readme",
+  "dependencies": {
+    "@aws-sdk/client-dynamodb": "^3.1019.0",
+    "@aws-sdk/lib-dynamodb": "^3.1019.0",
+    "uuid": "^13.0.0"
+  }
+}
