@@ -72,7 +72,7 @@
           var total = ev.total_slots || 0;
           var pct = Shared.coveragePercent(filled, total);
           var color = Shared.coverageColor(pct);
-          html += '<div class="card clickable" onclick="window.location.href=\'admin/event-detail.html?id=' + _e(ev.id) + '\'">' +
+          html += '<div class="card clickable" onclick="window.location.href=\'admin/event-detail.html?id=' + _e(ev.eventId) + '\'">' +
             '<div class="card-header"><h3>' + _e(ev.name) + '</h3>' + Shared.statusBadge(Shared.getEventStatus(ev.date)) + '</div>' +
             '<div class="card-meta">' +
               '<span>' + _e(Shared.formatDate(ev.date)) + '</span>' +
@@ -145,7 +145,7 @@
         html += '<div class="card">' +
           '<div class="card-header">' +
             '<div>' +
-              '<h3 style="cursor:pointer" onclick="window.location.href=\'admin/event-detail.html?id=' + _e(ev.id) + '\'">' + _e(ev.name) + '</h3>' +
+              '<h3 style="cursor:pointer" onclick="window.location.href=\'admin/event-detail.html?id=' + _e(ev.eventId) + '\'">' + _e(ev.name) + '</h3>' +
               '<div class="card-meta mt-1">' +
                 '<span>' + _e(Shared.formatDate(ev.date)) + '</span>' +
                 '<span>' + (ev.shift_count || 0) + ' shifts</span>' +
@@ -159,9 +159,9 @@
           (ev.description ? '<p class="text-dim" style="font-size:0.88rem;margin-bottom:8px">' + _e(ev.description) + '</p>' : '') +
           '<div class="progress-bar"><div class="progress-fill ' + color + '" style="width:' + pct + '%"></div></div>' +
           '<div class="card-actions">' +
-            '<a href="admin/event-detail.html?id=' + _e(ev.id) + '" class="btn btn-sm btn-primary">Manage</a>' +
-            '<button class="btn btn-sm btn-secondary" onclick="Admin.showEventForm(' + "'" + _e(ev.id) + "'" + ')">Edit</button>' +
-            '<button class="btn btn-sm btn-danger" onclick="Admin.deleteEvent(' + "'" + _e(ev.id) + "','" + _e(ev.name) + "'" + ')">Delete</button>' +
+            '<a href="admin/event-detail.html?id=' + _e(ev.eventId) + '" class="btn btn-sm btn-primary">Manage</a>' +
+            '<button class="btn btn-sm btn-secondary" onclick="Admin.showEventForm(' + "'" + _e(ev.eventId) + "'" + ')">Edit</button>' +
+            '<button class="btn btn-sm btn-danger" onclick="Admin.deleteEvent(' + "'" + _e(ev.eventId) + "','" + _e(ev.name) + "'" + ')">Delete</button>' +
           '</div>' +
         '</div>';
       });
@@ -301,9 +301,9 @@
       shiftsWithAssignments.forEach(function (shift) {
         (shift.assignments || []).forEach(function (a) {
           allAssignments.push(Object.assign({}, a, {
-            shiftName: shift.name,
-            shiftTimeStart: shift.timeStart,
-            shiftTimeEnd: shift.timeEnd
+            shiftLabel: shift.label,
+            shiftStart: shift.startTime,
+            shiftEnd: shift.endTime
           }));
         });
       });
@@ -337,7 +337,7 @@
       '</div>';
 
     document.getElementById('btn-edit-event').addEventListener('click', function () {
-      Admin.showEventForm(ev.id);
+      Admin.showEventForm(ev.eventId);
     });
   };
 
@@ -353,21 +353,21 @@
       return;
     }
 
-    shifts.sort(function (a, b) { return (a.start_time || '').localeCompare(b.start_time || ''); });
+    shifts.sort(function (a, b) { return (a.startTime || '').localeCompare(b.startTime || ''); });
 
     var html = '';
     shifts.forEach(function (shift) {
-      var shiftAssignments = assignments.filter(function (a) { return a.shift_id === shift.id; });
+      var shiftAssignments = assignments.filter(function (a) { return a.shiftId === shift.shiftId; });
       var filled = shiftAssignments.length;
-      var max = shift.max_volunteers || 0;
+      var max = shift.maxVolunteers || 0;
 
       html += '<div class="shift-block">';
       html += '<div class="shift-header">' +
-        '<div class="shift-time">' + _e(Shared.formatTime(shift.start_time)) + ' \u2013 ' + _e(Shared.formatTime(shift.end_time)) + '</div>' +
+        '<div class="shift-time">' + _e(Shared.formatTime(shift.startTime)) + ' \u2013 ' + _e(Shared.formatTime(shift.endTime)) + '</div>' +
         '<div class="shift-meta">' +
           '<span>' + filled + '/' + max + ' volunteers</span>' +
-          '<button class="btn btn-xs btn-secondary" onclick="Admin.editShift(\'' + _e(shift.id) + '\')">Edit</button>' +
-          '<button class="btn btn-xs btn-danger" onclick="Admin.deleteShift(\'' + _e(shift.id) + '\')">Delete</button>' +
+          '<button class="btn btn-xs btn-secondary" onclick="Admin.editShift(\'' + _e(shift.shiftId) + '\')">Edit</button>' +
+          '<button class="btn btn-xs btn-danger" onclick="Admin.deleteShift(\'' + _e(shift.shiftId) + '\')">Delete</button>' +
         '</div>' +
       '</div>';
 
@@ -376,24 +376,24 @@
         html += '<p class="text-dim" style="padding:8px 0;font-size:0.88rem">No volunteers assigned to this shift yet.</p>';
       } else {
         shiftAssignments.forEach(function (a) {
-          var vol = Admin._volunteersData.find(function (v) { return v.id === a.volunteer_id; });
-          var volName = vol ? vol.name : (a.volunteer_name || 'Unknown');
-          var loc = locations.find(function (l) { return l.id === a.location_id; });
+          var vol = Admin._volunteersData.find(function (v) { return v.userId === a.userId; });
+          var volName = vol ? vol.name : (a.volunteerName || 'Unknown');
+          var loc = locations.find(function (l) { return l.locationId === a.locationId; });
           var locName = loc ? loc.name : '';
 
           html += '<div class="assignment-row">' +
             '<div class="vol-name">' + _e(volName) + '</div>' +
             '<div class="vol-location">' +
-              '<select class="form-select" style="max-width:180px;padding:6px 10px;font-size:0.82rem" onchange="Admin.changeAssignmentLocation(\'' + _e(a.id) + '\', this.value)">' +
+              '<select class="form-select" style="max-width:180px;padding:6px 10px;font-size:0.82rem" onchange="Admin.changeAssignmentLocation(\'' + _e(a.assignmentId) + '\', this.value)">' +
                 '<option value="">No location</option>';
           locations.forEach(function (l) {
-            html += '<option value="' + _e(l.id) + '"' + (a.location_id === l.id ? ' selected' : '') + '>' + _e(l.name) + '</option>';
+            html += '<option value="' + _e(l.locationId) + '"' + (a.locationId === l.locationId ? ' selected' : '') + '>' + _e(l.name) + '</option>';
           });
           html += '</select>' +
             '</div>' +
             '<div class="vol-status">' + Shared.statusBadge(a.status || 'pending') + '</div>' +
             '<div class="vol-actions">' +
-              '<button class="btn btn-xs btn-danger" onclick="Admin.removeAssignment(\'' + _e(a.id) + '\', \'' + _e(volName) + '\')">Remove</button>' +
+              '<button class="btn btn-xs btn-danger" onclick="Admin.removeAssignment(\'' + _e(a.assignmentId) + '\', \'' + _e(volName) + '\')">Remove</button>' +
             '</div>' +
           '</div>';
         });
@@ -402,11 +402,11 @@
 
       /* Add volunteer to shift */
       html += '<div class="shift-add-row">' +
-        '<div class="dropdown-wrapper" id="dd-shift-' + _e(shift.id) + '">' +
-          '<button class="btn btn-sm btn-secondary" onclick="Admin.toggleVolunteerDropdown(\'' + _e(shift.id) + '\')">+ Add Volunteer</button>' +
-          '<div class="dropdown-menu" id="dd-menu-' + _e(shift.id) + '">' +
-            '<div class="dropdown-search"><input type="text" placeholder="Search volunteers..." oninput="Admin.filterVolunteerDropdown(\'' + _e(shift.id) + '\', this.value)"></div>' +
-            '<div id="dd-list-' + _e(shift.id) + '">' + Admin.renderVolunteerDropdownItems(shift.id, '') + '</div>' +
+        '<div class="dropdown-wrapper" id="dd-shift-' + _e(shift.shiftId) + '">' +
+          '<button class="btn btn-sm btn-secondary" onclick="Admin.toggleVolunteerDropdown(\'' + _e(shift.shiftId) + '\')">+ Add Volunteer</button>' +
+          '<div class="dropdown-menu" id="dd-menu-' + _e(shift.shiftId) + '">' +
+            '<div class="dropdown-search"><input type="text" placeholder="Search volunteers..." oninput="Admin.filterVolunteerDropdown(\'' + _e(shift.shiftId) + '\', this.value)"></div>' +
+            '<div id="dd-list-' + _e(shift.shiftId) + '">' + Admin.renderVolunteerDropdownItems(shift.shiftId, '') + '</div>' +
           '</div>' +
         '</div>' +
       '</div>';
@@ -421,10 +421,10 @@
 
   Admin.renderVolunteerDropdownItems = function (shiftId, query) {
     var assignments = Admin._assignmentsData;
-    var assignedIds = assignments.filter(function (a) { return a.shift_id === shiftId; }).map(function (a) { return a.volunteer_id; });
+    var assignedIds = assignments.filter(function (a) { return a.shiftId === shiftId; }).map(function (a) { return a.userId; });
 
     var available = Admin._volunteersData.filter(function (v) {
-      if (assignedIds.indexOf(v.id) !== -1) return false;
+      if (assignedIds.indexOf(v.userId) !== -1) return false;
       if (query) {
         return v.name.toLowerCase().indexOf(query.toLowerCase()) !== -1;
       }
@@ -437,7 +437,7 @@
 
     var html = '';
     available.forEach(function (v) {
-      html += '<div class="dropdown-item" onclick="Admin.addVolunteerToShift(\'' + _e(shiftId) + '\', \'' + _e(v.id) + '\')">' +
+      html += '<div class="dropdown-item" onclick="Admin.addVolunteerToShift(\'' + _e(shiftId) + '\', \'' + _e(v.userId) + '\')">' +
         _e(v.name) +
         '<span class="item-sub">' + _e(v.email || '') + '</span>' +
       '</div>';
@@ -477,9 +477,9 @@
     });
 
     API.createAssignment({
-      shift_id: shiftId,
-      volunteer_id: volunteerId,
-      event_id: Admin._eventId,
+      shiftId: shiftId,
+      userId: volunteerId,
+      eventId: Admin._eventId,
       status: 'pending'
     }).then(function () {
       Shared.showToast('Volunteer assigned.');
@@ -501,7 +501,7 @@
   };
 
   Admin.changeAssignmentLocation = function (assignmentId, locationId) {
-    API.updateAssignment(assignmentId, { location_id: locationId || null }).then(function () {
+    API.updateAssignment(assignmentId, { locationId: locationId || null }).then(function () {
       Shared.showToast('Location updated.');
     }).catch(function (err) {
       Shared.showToast(err.message, true);
@@ -518,7 +518,7 @@
       return;
     }
 
-    var ids = pending.map(function (a) { return a.id; });
+    var ids = pending.map(function (a) { return a.assignmentId; });
 
     Shared.showModal('Send Invites', '<p>Send email invitations to <strong>' + ids.length + '</strong> pending volunteer(s)?</p>', [
       { label: 'Cancel', class: 'btn-secondary', onClick: Shared.closeModal },
@@ -564,9 +564,9 @@
         }
 
         API.createShift(Admin._eventId, {
-          start_time: start,
-          end_time: end,
-          max_volunteers: max
+          startTime: start,
+          endTime: end,
+          maxVolunteers: max
         }).then(function () {
           Shared.closeModal();
           Shared.showToast('Shift added.');
@@ -579,23 +579,23 @@
   };
 
   Admin.editShift = function (shiftId) {
-    var shift = Admin._shiftsData.find(function (s) { return s.id === shiftId; });
+    var shift = Admin._shiftsData.find(function (s) { return s.shiftId === shiftId; });
     if (!shift) return;
 
     var content =
       '<div class="form-row">' +
         '<div class="form-group">' +
           '<label>Start Time <span class="required">*</span></label>' +
-          '<input type="time" class="form-input" id="shift-start" value="' + _e(shift.start_time || '') + '">' +
+          '<input type="time" class="form-input" id="shift-start" value="' + _e(shift.startTime || '') + '">' +
         '</div>' +
         '<div class="form-group">' +
           '<label>End Time <span class="required">*</span></label>' +
-          '<input type="time" class="form-input" id="shift-end" value="' + _e(shift.end_time || '') + '">' +
+          '<input type="time" class="form-input" id="shift-end" value="' + _e(shift.endTime || '') + '">' +
         '</div>' +
       '</div>' +
       '<div class="form-group">' +
         '<label>Max Volunteers</label>' +
-        '<input type="number" class="form-input" id="shift-max" min="1" value="' + (shift.max_volunteers || 10) + '">' +
+        '<input type="number" class="form-input" id="shift-max" min="1" value="' + (shift.maxVolunteers || 10) + '">' +
       '</div>';
 
     Shared.showModal('Edit Shift', content, [
@@ -611,9 +611,9 @@
         }
 
         API.updateShift(shiftId, {
-          start_time: start,
-          end_time: end,
-          max_volunteers: max
+          startTime: start,
+          endTime: end,
+          maxVolunteers: max
         }).then(function () {
           Shared.closeModal();
           Shared.showToast('Shift updated.');
@@ -652,10 +652,10 @@
 
     html += '<div class="table-wrapper"><table><thead><tr><th>Location</th><th>Description</th><th>Assigned Volunteers</th><th>Actions</th></tr></thead><tbody>';
     locations.forEach(function (loc) {
-      var locAssignments = assignments.filter(function (a) { return a.location_id === loc.id; });
+      var locAssignments = assignments.filter(function (a) { return a.locationId === loc.locationId; });
       var volNames = locAssignments.map(function (a) {
-        var v = Admin._volunteersData.find(function (vol) { return vol.id === a.volunteer_id; });
-        return v ? v.name : (a.volunteer_name || 'Unknown');
+        var v = Admin._volunteersData.find(function (vol) { return vol.userId === a.userId; });
+        return v ? v.name : (a.volunteerName || 'Unknown');
       });
 
       html += '<tr>' +
@@ -663,8 +663,8 @@
         '<td class="text-dim">' + _e(loc.description || '-') + '</td>' +
         '<td>' + (volNames.length ? volNames.map(function (n) { return _e(n); }).join(', ') : '<span class="text-muted">None</span>') + '</td>' +
         '<td>' +
-          '<button class="btn btn-xs btn-secondary" onclick="Admin.editLocation(\'' + _e(loc.id) + '\')">Edit</button> ' +
-          '<button class="btn btn-xs btn-danger" onclick="Admin.deleteLocation(\'' + _e(loc.id) + '\', \'' + _e(loc.name) + '\')">Delete</button>' +
+          '<button class="btn btn-xs btn-secondary" onclick="Admin.editLocation(\'' + _e(loc.locationId) + '\')">Edit</button> ' +
+          '<button class="btn btn-xs btn-danger" onclick="Admin.deleteLocation(\'' + _e(loc.locationId) + '\', \'' + _e(loc.name) + '\')">Delete</button>' +
         '</td>' +
       '</tr>';
     });
@@ -707,7 +707,7 @@
   };
 
   Admin.editLocation = function (locId) {
-    var loc = Admin._locationsData.find(function (l) { return l.id === locId; });
+    var loc = Admin._locationsData.find(function (l) { return l.locationId === locId; });
     if (!loc) return;
 
     var content =
@@ -765,7 +765,7 @@
       return;
     }
 
-    shifts.sort(function (a, b) { return (a.start_time || '').localeCompare(b.start_time || ''); });
+    shifts.sort(function (a, b) { return (a.startTime || '').localeCompare(b.startTime || ''); });
 
     var totalSlots = 0;
     var filledSlots = 0;
@@ -779,12 +779,12 @@
 
     shifts.forEach(function (shift) {
       html += '<tr>';
-      html += '<td>' + _e(Shared.formatTime(shift.start_time)) + ' \u2013 ' + _e(Shared.formatTime(shift.end_time)) + '</td>';
+      html += '<td>' + _e(Shared.formatTime(shift.startTime)) + ' \u2013 ' + _e(Shared.formatTime(shift.endTime)) + '</td>';
 
-      var shiftAssignments = assignments.filter(function (a) { return a.shift_id === shift.id; });
+      var shiftAssignments = assignments.filter(function (a) { return a.shiftId === shift.shiftId; });
 
       locations.forEach(function (loc) {
-        var locAssignments = shiftAssignments.filter(function (a) { return a.location_id === loc.id; });
+        var locAssignments = shiftAssignments.filter(function (a) { return a.locationId === loc.locationId; });
         totalSlots++;
 
         if (locAssignments.length === 0) {
@@ -792,8 +792,8 @@
         } else {
           var names = [];
           locAssignments.forEach(function (a) {
-            var v = Admin._volunteersData.find(function (vol) { return vol.id === a.volunteer_id; });
-            var n = v ? v.name : (a.volunteer_name || '?');
+            var v = Admin._volunteersData.find(function (vol) { return vol.userId === a.userId; });
+            var n = v ? v.name : (a.volunteerName || '?');
             var status = a.status || 'pending';
             names.push('<span class="coverage-cell ' + _e(status) + '">' + _e(n) + '</span>');
             filledSlots++;
@@ -804,10 +804,10 @@
       });
 
       /* Unassigned (no location) */
-      var unassigned = shiftAssignments.filter(function (a) { return !a.location_id; });
+      var unassigned = shiftAssignments.filter(function (a) { return !a.locationId; });
       if (unassigned.length) {
         var unames = unassigned.map(function (a) {
-          var v = Admin._volunteersData.find(function (vol) { return vol.id === a.volunteer_id; });
+          var v = Admin._volunteersData.find(function (vol) { return vol.userId === a.userId; });
           return '<span class="coverage-cell pending">' + _e(v ? v.name : '?') + '</span>';
         });
         html += '<td>' + unames.join('<br>') + '</td>';
@@ -821,7 +821,7 @@
     html += '</tbody></table></div></div>';
 
     var totalAssignments = assignments.length;
-    var totalMaxSlots = shifts.reduce(function (sum, s) { return sum + (s.max_volunteers || 0); }, 0);
+    var totalMaxSlots = shifts.reduce(function (sum, s) { return sum + (s.maxVolunteers || 0); }, 0);
     var overallPct = Shared.coveragePercent(totalAssignments, totalMaxSlots);
     html += '<div class="coverage-total">Overall Coverage: ' + totalAssignments + '/' + totalMaxSlots +
       ' volunteers assigned (' + overallPct + '%)</div>';
@@ -887,8 +887,8 @@
         '<td>' + Shared.statusBadge(v.role || 'volunteer') + '</td>' +
         '<td>' + (v.event_count || 0) + '</td>' +
         '<td>' +
-          '<button class="btn btn-xs btn-secondary" onclick="Admin.showVolunteerForm(\'' + _e(v.id) + '\')">Edit</button> ' +
-          '<button class="btn btn-xs btn-danger" onclick="Admin.deleteVolunteer(\'' + _e(v.id) + '\', \'' + _e(v.name) + '\')">Delete</button>' +
+          '<button class="btn btn-xs btn-secondary" onclick="Admin.showVolunteerForm(\'' + _e(v.userId) + '\')">Edit</button> ' +
+          '<button class="btn btn-xs btn-danger" onclick="Admin.deleteVolunteer(\'' + _e(v.userId) + '\', \'' + _e(v.name) + '\')">Delete</button>' +
         '</td>' +
       '</tr>';
     });
@@ -915,7 +915,7 @@
 
   Admin.showVolunteerForm = function (volunteerId) {
     var title = volunteerId ? 'Edit Volunteer' : 'Add Volunteer';
-    var vol = volunteerId ? Admin._allVolunteers.find(function (v) { return v.id === volunteerId; }) : null;
+    var vol = volunteerId ? Admin._allVolunteers.find(function (v) { return v.userId === volunteerId; }) : null;
 
     if (volunteerId && !vol) {
       API.getVolunteer(volunteerId).then(function (v) {

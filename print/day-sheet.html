@@ -122,20 +122,20 @@
         /* Build volunteer lookup */
         var volMap = {};
         volunteers.forEach(function (v) {
-          volMap[v.id] = v;
+          volMap[v.userId] = v;
         });
 
         /* Build location lookup */
         var locMap = {};
         locations.forEach(function (loc) {
-          var id = loc.location_id || loc.locationId || loc.id || '';
-          locMap[id] = loc.name || loc.location_name || '';
+          var id = loc.locationId || '';
+          locMap[id] = loc.name || '';
         });
 
         /* Group assignments by shift */
         var assignByShift = {};
         assignments.forEach(function (a) {
-          var sid = a.shift_id || a.shiftId || '';
+          var sid = a.shiftId || '';
           if (!assignByShift[sid]) assignByShift[sid] = [];
           assignByShift[sid].push(a);
         });
@@ -154,8 +154,8 @@
 
     function renderDaySheet(event, shifts, locations, locMap, assignByShift, volMap) {
       shifts.sort(function (a, b) {
-        var sa = a.start_time || a.startTime || '';
-        var sb = b.start_time || b.startTime || '';
+        var sa = a.startTime || '';
+        var sb = b.startTime || '';
         return sa.localeCompare(sb);
       });
 
@@ -163,7 +163,7 @@
 
       /* Page header */
       html += '<h1>' + esc(event.name || 'Event') + '</h1>';
-      html += '<div class="ds-date">' + esc(Shared.formatDate(event.date || event.event_date || '')) + '</div>';
+      html += '<div class="ds-date">' + esc(Shared.formatDate(event.date || '')) + '</div>';
 
       if (event.description) {
         html += '<p style="margin-bottom:20px;font-size:11pt;color:#444">' + esc(event.description) + '</p>';
@@ -177,11 +177,11 @@
       shifts.forEach(function (shift) {
         html += '<div class="ds-shift">';
 
-        var shiftId = shift.shift_id || shift.shiftId || shift.id || '';
-        var maxVol = shift.max_volunteers || shift.maxVolunteers || 10;
+        var shiftId = shift.shiftId || '';
+        var maxVol = shift.maxVolunteers || 10;
         var timeLabel = '';
-        var st = shift.start_time || shift.startTime || '';
-        var et = shift.end_time || shift.endTime || '';
+        var st = shift.startTime || '';
+        var et = shift.endTime || '';
         timeLabel = Shared.formatTime(st);
         if (et) timeLabel += ' \u2013 ' + Shared.formatTime(et);
 
@@ -213,8 +213,8 @@
         var rowNum = 1;
         shiftVols.forEach(function (a) {
           var status = a.status || 'pending';
-          var locId = a.location_id || a.locationId || '';
-          var locName = a.location_name || a.locationName || locMap[locId] || '';
+          var locId = a.locationId || '';
+          var locName = a.locationName || locMap[locId] || '';
           var name = getVolName(a, volMap);
           var phone = getVolPhone(a, volMap);
           var notes = a.notes || '';
@@ -256,7 +256,7 @@
         html += '<h3>Locations / Zones</h3>';
         html += '<ul>';
         locations.forEach(function (loc) {
-          var name = loc.name || loc.location_name || '';
+          var name = loc.name || '';
           var desc = loc.description || '';
           html += '<li><strong>' + esc(name) + '</strong>';
           if (desc) html += ' \u2014 ' + esc(desc);
@@ -286,19 +286,19 @@
     }
 
     function getVolName(assignment, volMap) {
-      if (assignment.volunteer_name || assignment.volunteerName) {
-        return assignment.volunteer_name || assignment.volunteerName;
+      if (assignment.volunteerName) {
+        return assignment.volunteerName;
       }
-      var volId = assignment.volunteer_id || assignment.volunteerId || '';
+      var volId = assignment.userId || '';
       var vol = volMap[volId];
       return vol ? (vol.name || '') : 'Unknown';
     }
 
     function getVolPhone(assignment, volMap) {
-      if (assignment.phone || assignment.volunteer_phone) {
-        return assignment.phone || assignment.volunteer_phone;
+      if (assignment.phone || assignment.volunteerPhone) {
+        return assignment.phone || assignment.volunteerPhone;
       }
-      var volId = assignment.volunteer_id || assignment.volunteerId || '';
+      var volId = assignment.userId || '';
       var vol = volMap[volId];
       return vol ? (vol.phone || '') : '';
     }

@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Signing In...</title>
+<style>body{background:#0f1117;color:#e4e6f0;font-family:sans-serif;display:flex;justify-content:center;align-items:center;height:100vh;margin:0}.card{text-align:center}h2{color:#d4a843}</style>
+</head>
+<body>
+<div class="card">
+<h2>IMC</h2>
+<p>Signing you in...</p>
+</div>
+<script>
+(function() {
+  var params = new URLSearchParams(window.location.search);
+  var session = params.get('session');
+  if (session) {
+    localStorage.setItem('session_token', session);
+    localStorage.setItem('user', JSON.stringify({
+      userId: params.get('uid') || '',
+      orgId: params.get('oid') || '',
+      email: params.get('email') || '',
+      role: params.get('role') || 'admin'
+    }));
+    window.location.href = '/admin/dashboard.html';
+  } else {
+    document.querySelector('p').textContent = 'Missing session. Go back and try again.';
+  }
+})();
+</script>
+</body>
+</html>

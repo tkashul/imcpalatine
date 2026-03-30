@@ -92,26 +92,26 @@
 
           /* Sort by date then shift start */
           assignments.sort(function (a, b) {
-            var da = a.event_date || '';
-            var db = b.event_date || '';
+            var da = a.eventDate || '';
+            var db = b.eventDate || '';
             if (da !== db) return da < db ? -1 : 1;
-            var sa = a.shift_start || '';
-            var sb = b.shift_start || '';
+            var sa = a.shiftStart || '';
+            var sb = b.shiftStart || '';
             return sa < sb ? -1 : 1;
           });
 
           var today = new Date().toISOString().slice(0, 10);
-          var upcoming = assignments.filter(function (a) { return (a.event_date || '') >= today; });
-          var past = assignments.filter(function (a) { return (a.event_date || '') < today; });
+          var upcoming = assignments.filter(function (a) { return (a.eventDate || '') >= today; });
+          var past = assignments.filter(function (a) { return (a.eventDate || '') < today; });
 
           /* Group by event */
           function groupByEvent(items) {
             var grouped = {};
             var order = [];
             items.forEach(function (a) {
-              var key = a.event_id || 'unknown';
+              var key = a.eventId || 'unknown';
               if (!grouped[key]) {
-                grouped[key] = { event_name: a.event_name || 'Event', event_date: a.event_date || '', items: [] };
+                grouped[key] = { eventName: a.eventName || 'Event', eventDate: a.eventDate || '', items: [] };
                 order.push(key);
               }
               grouped[key].items.push(a);
@@ -124,8 +124,8 @@
           if (upcoming.length > 0) {
             groupByEvent(upcoming).forEach(function (group) {
               html += '<div class="card mb-2">' +
-                '<div class="card-header"><h3>' + _e(group.event_name) + '</h3>' +
-                '<span class="text-dim">' + _e(Shared.formatDate(group.event_date)) + '</span></div>';
+                '<div class="card-header"><h3>' + _e(group.eventName) + '</h3>' +
+                '<span class="text-dim">' + _e(Shared.formatDate(group.eventDate)) + '</span></div>';
 
               group.items.forEach(function (a) {
                 html += renderAssignmentRow(a, false);
@@ -147,8 +147,8 @@
 
             groupByEvent(past).forEach(function (group) {
               html += '<div class="card mb-2" style="opacity:0.6">' +
-                '<div class="card-header"><h3>' + _e(group.event_name) + '</h3>' +
-                '<span class="text-dim">' + _e(Shared.formatDate(group.event_date)) + '</span></div>';
+                '<div class="card-header"><h3>' + _e(group.eventName) + '</h3>' +
+                '<span class="text-dim">' + _e(Shared.formatDate(group.eventDate)) + '</span></div>';
 
               group.items.forEach(function (a) {
                 html += renderAssignmentRow(a, true);
@@ -182,14 +182,14 @@
       function renderAssignmentRow(a, isPast) {
         var html = '<div class="assignment-row">' +
           '<div class="vol-name">' +
-            _e(Shared.formatTime(a.shift_start || a.shiftStart || '')) + ' \u2013 ' + _e(Shared.formatTime(a.shift_end || a.shiftEnd || '')) +
+            _e(Shared.formatTime(a.shiftStart || '')) + ' \u2013 ' + _e(Shared.formatTime(a.shiftEnd || '')) +
           '</div>' +
-          '<div class="vol-location text-dim">' + _e(a.location_name || a.locationName || 'No location') + '</div>' +
+          '<div class="vol-location text-dim">' + _e(a.locationName || 'No location') + '</div>' +
           '<div class="vol-status">' + Shared.statusBadge(a.status || 'pending') + '</div>' +
           '<div class="vol-actions">';
 
         var status = a.status || 'pending';
-        var assignId = a.assignment_id || a.assignmentId || a.id || '';
+        var assignId = a.assignmentId || '';
 
         if (!isPast && (status === 'pending' || status === 'invited')) {
           html += '<button class="btn btn-xs btn-success" onclick="Portal.respond(\'' + _e(assignId) + '\', \'accepted\')">Accept</button> ' +
@@ -232,7 +232,7 @@
           if (items[0] && items[0].shifts) {
             /* Grouped by event */
             items.forEach(function (evt) {
-              var evtDate = evt.date || evt.event_date || '';
+              var evtDate = evt.date || evt.eventDate || '';
               var today = new Date().toISOString().slice(0, 10);
               if (evtDate < today) return;
 
@@ -241,8 +241,8 @@
               var shiftHtml = '';
 
               shifts.forEach(function (s) {
-                var maxVol = s.max_volunteers || s.maxVolunteers || 0;
-                var assigned = s.assigned_count || s.assignedCount || 0;
+                var maxVol = s.maxVolunteers || 0;
+                var assigned = s.assignedCount || 0;
                 var spotsLeft = maxVol - assigned;
                 if (spotsLeft <= 0) return;
                 hasOpen = true;
@@ -250,18 +250,18 @@
                 shiftHtml += '<div class="card mb-1">' +
                   '<div class="flex justify-between items-center flex-wrap gap-1">' +
                     '<div>' +
-                      '<strong>' + _e(Shared.formatTime(s.start_time || s.startTime || '')) + ' \u2013 ' +
-                        _e(Shared.formatTime(s.end_time || s.endTime || '')) + '</strong>' +
+                      '<strong>' + _e(Shared.formatTime(s.startTime || '')) + ' \u2013 ' +
+                        _e(Shared.formatTime(s.endTime || '')) + '</strong>' +
                       '<div class="text-dim" style="font-size:0.82rem">' + spotsLeft + ' spot' + (spotsLeft !== 1 ? 's' : '') + ' remaining</div>' +
                     '</div>' +
-                    '<button class="btn btn-sm btn-success" onclick="Portal.signUp(\'' + _e(s.shift_id || s.shiftId || s.id || '') + '\', \'' + _e(evt.event_id || evt.eventId || evt.id || '') + '\')">Sign Up</button>' +
+                    '<button class="btn btn-sm btn-success" onclick="Portal.signUp(\'' + _e(s.shiftId || '') + '\', \'' + _e(evt.eventId || '') + '\')">Sign Up</button>' +
                   '</div>' +
                 '</div>';
               });
 
               if (hasOpen) {
                 html += '<div class="mb-3">' +
-                  '<h3 style="margin-bottom:4px">' + _e(evt.name || evt.event_name || '') + '</h3>' +
+                  '<h3 style="margin-bottom:4px">' + _e(evt.name || evt.eventName || '') + '</h3>' +
                   '<p class="text-dim mb-1" style="font-size:0.85rem">' + _e(Shared.formatDate(evtDate)) + '</p>' +
                   shiftHtml +
                 '</div>';
@@ -270,12 +270,12 @@
           } else {
             /* Flat shift list */
             items.forEach(function (s) {
-              var maxVol = s.maxVolunteers || s.max_volunteers || 0;
-              var curVol = s.currentVolunteers || s.current_count || 0;
+              var maxVol = s.maxVolunteers || 0;
+              var curVol = s.currentVolunteers || 0;
               var spotsLeft = maxVol - curVol;
               if (spotsLeft < 0) spotsLeft = 0;
-              var evtName = (s.event && s.event.name) || s.event_name || s.eventName || 'Event';
-              var evtDate = (s.event && s.event.date) || s.event_date || s.eventDate || '';
+              var evtName = (s.event && s.event.name) || s.eventName || 'Event';
+              var evtDate = (s.event && s.event.date) || s.eventDate || '';
 
               html += '<div class="card mb-2">' +
                 '<div class="card-header">' +
@@ -283,12 +283,12 @@
                   '<span class="text-dim">' + _e(Shared.formatDate(evtDate)) + '</span>' +
                 '</div>' +
                 '<div class="card-meta">' +
-                  '<span>' + _e(Shared.formatTime(s.timeStart || s.start_time || '')) + ' \u2013 ' + _e(Shared.formatTime(s.timeEnd || s.end_time || '')) + '</span>' +
+                  '<span>' + _e(Shared.formatTime(s.startTime || '')) + ' \u2013 ' + _e(Shared.formatTime(s.endTime || '')) + '</span>' +
                   '<span>' + spotsLeft + ' spot' + (spotsLeft !== 1 ? 's' : '') + ' remaining</span>' +
                 '</div>' +
-                (s.location_name ? '<p class="text-dim" style="font-size:0.85rem">Location: ' + _e(s.location_name) + '</p>' : '') +
+                (s.locationName ? '<p class="text-dim" style="font-size:0.85rem">Location: ' + _e(s.locationName) + '</p>' : '') +
                 '<div class="card-actions">' +
-                  '<button class="btn btn-sm btn-success" onclick="Portal.signUp(\'' + _e(s.shiftId || s.id || s.shift_id || '') + '\', \'' + _e(s.eventId || (s.event && s.event.eventId) || s.event_id || '') + '\')">Sign Up</button>' +
+                  '<button class="btn btn-sm btn-success" onclick="Portal.signUp(\'' + _e(s.shiftId || '') + '\', \'' + _e(s.eventId || (s.event && s.event.eventId) || '') + '\')">Sign Up</button>' +
                 '</div>' +
               '</div>';
             });

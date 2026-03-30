@@ -135,7 +135,7 @@
     mySchedule: function () { return request('GET', '/api/my/schedule'); },
     myUpdateAssignment: function (id, data) { return request('PUT', '/api/my/assignments/' + id, data); },
     myAvailableShifts: function () { return request('GET', '/api/my/available-shifts'); },
-    mySignUp: function (shiftId, eventId) { return request('POST', '/api/my/sign-up', { shift_id: shiftId, event_id: eventId }); },
+    mySignUp: function (shiftId, eventId) { return request('POST', '/api/my/sign-up', { shiftId: shiftId, eventId: eventId }); },
 
     /* --- Dashboard --- */
     getDashboardStats: function () { return request('GET', '/api/admin/dashboard'); }
