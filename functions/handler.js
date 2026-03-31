@@ -1,7 +1,7 @@
 const { requireAuth, requireAdmin } = require('./shared/auth');
 const { parseBody, serverError, notFound, unauthorized, forbidden, json, CORS_HEADERS } = require('./shared/response');
 
-const { handleMagicLink, handleVerify, handleLogout } = require('./api/auth');
+const { handleMagicLink, handleVerify, handleLogout, handlePasswordLogin, handleSetPassword } = require('./api/auth');
 const { listEvents, createEvent, getEvent, updateEvent, deleteEvent } = require('./api/events');
 const { createShift, updateShift, deleteShift } = require('./api/shifts');
 const { createLocation, updateLocation, deleteLocation } = require('./api/locations');
@@ -24,6 +24,8 @@ const routes = [
   { method: 'POST', pattern: /^\/api\/auth\/magic-link$/, handler: 'authMagicLink' },
   { method: 'GET', pattern: /^\/api\/auth\/verify$/, handler: 'authVerify' },
   { method: 'POST', pattern: /^\/api\/auth\/verify$/, handler: 'authVerify' },
+  { method: 'POST', pattern: /^\/api\/auth\/login$/, handler: 'authPasswordLogin' },
+  { method: 'POST', pattern: /^\/api\/auth\/set-password$/, handler: 'authSetPassword' },
   { method: 'POST', pattern: /^\/api\/auth\/logout$/, handler: 'authLogout' },
 
   // Events
@@ -106,6 +108,15 @@ exports.handler = async (event) => {
 
     if (matched.handler === 'authVerify') {
       return await handleVerify(queryParams, body);
+    }
+
+    if (matched.handler === 'authPasswordLogin') {
+      return await handlePasswordLogin(body);
+    }
+
+    if (matched.handler === 'authSetPassword') {
+      const auth = await requireAdmin(event);
+      return await handleSetPassword(auth, body);
     }
 
     if (matched.handler === 'authLogout') {

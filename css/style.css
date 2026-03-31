@@ -169,6 +169,68 @@ input, select, textarea, button {
   gap: 16px;
 }
 
+/* --- Password input wrapper --- */
+.password-wrapper {
+  position: relative;
+}
+
+.password-wrapper .form-input {
+  padding-right: 44px;
+}
+
+.password-toggle {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 4px;
+  font-size: 0.85rem;
+  line-height: 1;
+  transition: color var(--transition);
+}
+
+.password-toggle:hover {
+  color: var(--text-dim);
+}
+
+/* --- Auth mode toggle & forgot link --- */
+.auth-links {
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+  font-size: 0.85rem;
+  color: var(--text-dim);
+}
+
+.auth-links a {
+  color: var(--text-dim);
+  text-decoration: none;
+  transition: color var(--transition);
+}
+
+.auth-links a:hover {
+  color: var(--blue);
+}
+
+.auth-mode-toggle {
+  margin-top: 10px;
+}
+
+.forgot-password-msg {
+  margin-top: 12px;
+  padding: 12px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 0.82rem;
+  color: var(--text-dim);
+  line-height: 1.5;
+}
+
 /* ============================================================
    Layout — Admin (Sidebar + Main)
    ============================================================ */

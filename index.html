@@ -14,26 +14,62 @@
       <span class="logo-name">Immaculate Conception Ukrainian Catholic Parish</span>
     </div>
 
-    <div id="login-form">
+    <!-- Password login (default) -->
+    <div id="password-form-section">
       <h1>Volunteer Planner</h1>
-      <p class="subtitle">Sign in with your email to manage or view your volunteer schedule.</p>
+      <p class="subtitle">Sign in to manage or view your volunteer schedule.</p>
+
+      <form id="password-form" onsubmit="return false;">
+        <div class="form-group" style="text-align:left">
+          <label>Email Address</label>
+          <input type="email" class="form-input" id="pw-email" placeholder="you@example.com" required autofocus>
+        </div>
+        <div class="form-group" style="text-align:left">
+          <label>Password</label>
+          <div class="password-wrapper">
+            <input type="password" class="form-input" id="pw-password" placeholder="Enter your password" required>
+            <button type="button" class="password-toggle" id="pw-toggle" tabindex="-1" aria-label="Show password">Show</button>
+          </div>
+        </div>
+        <button type="submit" class="btn btn-primary w-full" id="pw-btn">
+          Sign In
+        </button>
+      </form>
+
+      <div class="auth-links">
+        <a href="#" id="forgot-password-link">Forgot password?</a>
+        <div id="forgot-password-msg" class="forgot-password-msg" style="display:none">
+          Contact your administrator to reset your password.
+        </div>
+        <div class="auth-mode-toggle">
+          <a href="#" id="switch-to-magic">Sign in with email link instead</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Magic link login (secondary) -->
+    <div id="magic-form-section" style="display:none">
+      <h1>Volunteer Planner</h1>
+      <p class="subtitle">We'll send a secure sign-in link to your email.</p>
 
       <form id="magic-link-form" onsubmit="return false;">
         <div class="form-group" style="text-align:left">
           <label>Email Address</label>
-          <input type="email" class="form-input" id="login-email" placeholder="you@example.com" required autofocus>
+          <input type="email" class="form-input" id="login-email" placeholder="you@example.com" required>
         </div>
         <button type="submit" class="btn btn-primary w-full" id="login-btn">
           Send Sign-In Link
         </button>
       </form>
 
-      <div class="magic-link-info">
-        <strong>How does this work?</strong><br>
-        We'll send a secure, one-time sign-in link to your email. Click the link and you're in — no password needed.
+      <div class="auth-links">
+        <div class="auth-mode-toggle">
+          <a href="#" id="switch-to-password">Sign in with password instead</a>
+        </div>
       </div>
     </div>
 
+    <!-- Magic link success -->
     <div id="login-success" style="display:none">
       <div class="success-message">
         <strong>Check your email!</strong>
@@ -53,50 +89,135 @@
     (function () {
       Auth.init();
 
-      var form = document.getElementById('magic-link-form');
-      var btn = document.getElementById('login-btn');
-      var emailInput = document.getElementById('login-email');
-      var loginForm = document.getElementById('login-form');
+      /* --- Element refs --- */
+      var passwordSection = document.getElementById('password-form-section');
+      var magicSection = document.getElementById('magic-form-section');
       var loginSuccess = document.getElementById('login-success');
+
+      /* Password form refs */
+      var pwForm = document.getElementById('password-form');
+      var pwEmail = document.getElementById('pw-email');
+      var pwPassword = document.getElementById('pw-password');
+      var pwBtn = document.getElementById('pw-btn');
+      var pwToggle = document.getElementById('pw-toggle');
+      var forgotLink = document.getElementById('forgot-password-link');
+      var forgotMsg = document.getElementById('forgot-password-msg');
+
+      /* Magic link form refs */
+      var magicForm = document.getElementById('magic-link-form');
+      var magicEmail = document.getElementById('login-email');
+      var magicBtn = document.getElementById('login-btn');
       var sentEmail = document.getElementById('sent-email');
       var resendLink = document.getElementById('resend-link');
 
-      form.addEventListener('submit', function () {
-        handleLogin();
+      /* Mode toggle refs */
+      var switchToMagic = document.getElementById('switch-to-magic');
+      var switchToPassword = document.getElementById('switch-to-password');
+
+      /* --- Mode switching --- */
+      switchToMagic.addEventListener('click', function (e) {
+        e.preventDefault();
+        passwordSection.style.display = 'none';
+        magicSection.style.display = 'block';
+        loginSuccess.style.display = 'none';
+        magicEmail.focus();
       });
 
-      btn.addEventListener('click', function () {
-        handleLogin();
+      switchToPassword.addEventListener('click', function (e) {
+        e.preventDefault();
+        magicSection.style.display = 'none';
+        passwordSection.style.display = 'block';
+        loginSuccess.style.display = 'none';
+        pwEmail.focus();
       });
 
-      function handleLogin() {
-        var email = emailInput.value.trim();
+      /* --- Password show/hide toggle --- */
+      pwToggle.addEventListener('click', function () {
+        if (pwPassword.type === 'password') {
+          pwPassword.type = 'text';
+          pwToggle.textContent = 'Hide';
+        } else {
+          pwPassword.type = 'password';
+          pwToggle.textContent = 'Show';
+        }
+      });
+
+      /* --- Forgot password --- */
+      forgotLink.addEventListener('click', function (e) {
+        e.preventDefault();
+        forgotMsg.style.display = forgotMsg.style.display === 'none' ? 'block' : 'none';
+      });
+
+      /* --- Password login handler --- */
+      function handlePasswordLogin() {
+        var email = pwEmail.value.trim();
+        var password = pwPassword.value;
+
+        if (!email) {
+          Shared.showToast('Please enter your email address.', true);
+          return;
+        }
+        if (!password) {
+          Shared.showToast('Please enter your password.', true);
+          return;
+        }
+
+        pwBtn.disabled = true;
+        pwBtn.textContent = 'Signing in...';
+
+        Auth.loginWithPassword(email, password).catch(function (err) {
+          Shared.showToast(err.message || 'Invalid email or password.', true);
+          pwBtn.disabled = false;
+          pwBtn.textContent = 'Sign In';
+        });
+      }
+
+      pwForm.addEventListener('submit', function () {
+        handlePasswordLogin();
+      });
+
+      pwBtn.addEventListener('click', function () {
+        handlePasswordLogin();
+      });
+
+      /* --- Magic link login handler --- */
+      function handleMagicLogin() {
+        var email = magicEmail.value.trim();
         if (!email) {
           Shared.showToast('Please enter your email address.', true);
           return;
         }
 
-        btn.disabled = true;
-        btn.textContent = 'Sending...';
+        magicBtn.disabled = true;
+        magicBtn.textContent = 'Sending...';
 
         Auth.login(email).then(function () {
-          loginForm.style.display = 'none';
+          magicSection.style.display = 'none';
           loginSuccess.style.display = 'block';
           sentEmail.textContent = email;
         }).catch(function (err) {
           Shared.showToast(err.message || 'Failed to send sign-in link.', true);
-          btn.disabled = false;
-          btn.textContent = 'Send Sign-In Link';
+          magicBtn.disabled = false;
+          magicBtn.textContent = 'Send Sign-In Link';
         });
       }
 
+      magicForm.addEventListener('submit', function () {
+        handleMagicLogin();
+      });
+
+      magicBtn.addEventListener('click', function () {
+        handleMagicLogin();
+      });
+
+      /* --- Resend link --- */
       resendLink.addEventListener('click', function (e) {
         e.preventDefault();
-        loginForm.style.display = 'block';
+        magicSection.style.display = 'block';
         loginSuccess.style.display = 'none';
-        btn.disabled = false;
-        btn.textContent = 'Send Sign-In Link';
-        emailInput.focus();
+        magicBtn.disabled = false;
+        magicBtn.textContent = 'Send Sign-In Link';
+        magicEmail.focus();
       });
     })();
   </script>

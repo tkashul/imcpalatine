@@ -1,7 +1,7 @@
 const { v4: uuidv4 } = require('uuid');
 const db = require('../shared/db');
 const { ok, badRequest, noContent, unauthorized } = require('../shared/response');
-const { generateMagicLink, verifyToken, createSession, FRONTEND_URL } = require('../shared/auth');
+const { generateMagicLink, verifyToken, createSession, hashPassword, verifyPassword, FRONTEND_URL } = require('../shared/auth');
 const { sendMagicLink } = require('../shared/email');
 
 async function handleMagicLink(body) {
@@ -116,4 +116,70 @@ async function handleLogout(authContext) {
   return noContent();
 }
 
-module.exports = { handleMagicLink, handleVerify, handleLogout };
+async function handlePasswordLogin(body) {
+  const email = body.email;
+  const password = body.password;
+  if (!email || !password) {
+    return badRequest('email and password are required');
+  }
+
+  const normalizedEmail = email.toLowerCase().trim();
+
+  // Look up user by email
+  const emailItem = await db.get(`EMAIL#${normalizedEmail}`, 'METADATA');
+  if (!emailItem) {
+    return unauthorized('Invalid email or password');
+  }
+
+  const userId = emailItem.userId;
+  const userItem = await db.get(`USER#${userId}`, 'METADATA');
+  if (!userItem) {
+    return unauthorized('Invalid email or password');
+  }
+
+  if (!userItem.passwordHash) {
+    return unauthorized('Invalid email or password');
+  }
+
+  let valid = false;
+  try {
+    valid = verifyPassword(password, userItem.passwordHash);
+  } catch (err) {
+    return unauthorized('Invalid email or password');
+  }
+
+  if (!valid) {
+    return unauthorized('Invalid email or password');
+  }
+
+  const sessionToken = await createSession(userId, userItem.orgId, userItem.role || 'volunteer');
+
+  return ok({
+    session_token: sessionToken,
+    user: {
+      userId,
+      orgId: userItem.orgId,
+      email: normalizedEmail,
+      role: userItem.role || 'volunteer',
+      name: userItem.name,
+    },
+  });
+}
+
+async function handleSetPassword(authContext, body) {
+  if (!authContext || authContext.role !== 'admin') {
+    return unauthorized('Admin access required');
+  }
+
+  const password = body.password;
+  if (!password) {
+    return badRequest('password is required');
+  }
+
+  const passwordHash = hashPassword(password);
+  await db.update(`USER#${authContext.userId}`, 'METADATA', { passwordHash });
+
+  return ok({ message: 'Password set' });
+}
+
+module.exports = { handleMagicLink, handleVerify, handleLogout, handlePasswordLogin, handleSetPassword };

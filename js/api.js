@@ -52,7 +52,7 @@
 
     if (res.status === 401) {
       clearSession();
-      window.location.href = 'index.html';
+      window.location.href = '/index.html';
       throw new Error('Session expired. Please sign in again.');
     }
 
@@ -86,6 +86,12 @@
     del: function (path) { return request('DELETE', path); },
 
     /* --- Auth --- */
+    login: function (email, password) {
+      return request('POST', '/api/auth/login', { email: email, password: password });
+    },
+    setPassword: function (password) {
+      return request('POST', '/api/auth/set-password', { password: password });
+    },
     sendMagicLink: function (email) {
       return request('POST', '/api/auth/magic-link', { email: email });
     },

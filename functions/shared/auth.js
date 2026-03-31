@@ -5,6 +5,19 @@ const FRONTEND_URL = process.env.FRONTEND_URL || 'https://volunteer.imcpalatine.
 const MAGIC_LINK_TTL_MINUTES = 15;
 const SESSION_TTL_DAYS = 30;
 
+function hashPassword(password) {
+  const salt = crypto.randomBytes(16).toString('hex');
+  const hash = crypto.scryptSync(password, salt, 64).toString('hex');
+  return `${salt}:${hash}`;
+}
+
+function verifyPassword(password, storedHash) {
+  const [salt, hash] = storedHash.split(':');
+  const hashBuffer = Buffer.from(hash, 'hex');
+  const derivedBuffer = crypto.scryptSync(password, salt, 64);
+  return crypto.timingSafeEqual(hashBuffer, derivedBuffer);
+}
+
 async function generateMagicLink(email, orgId) {
   const token = crypto.randomBytes(32).toString('hex');
   const now = new Date().toISOString();
@@ -129,5 +142,7 @@ module.exports = {
   createSession,
   requireAuth,
   requireAdmin,
+  hashPassword,
+  verifyPassword,
   FRONTEND_URL,
 };

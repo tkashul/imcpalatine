@@ -21,13 +21,33 @@
       if (API.getToken() && API.getUser()) {
         var user = API.getUser();
         if (user.role === 'admin') {
-          window.location.href = 'admin/dashboard.html';
+          window.location.href = '/admin/dashboard.html';
         } else {
-          window.location.href = 'volunteer/portal.html';
+          window.location.href = '/volunteer/portal.html';
         }
       }
       return;
     }
+  };
+
+  /* Password-based login — store session + user, redirect by role */
+  Auth.loginWithPassword = function (email, password) {
+    return API.login(email, password).then(function (data) {
+      if (data && data.session_token) {
+        API.setToken(data.session_token);
+      }
+      if (data && data.user) {
+        API.setUser(data.user);
+      }
+
+      var user = data && data.user;
+      if (user && user.role === 'admin') {
+        window.location.href = '/admin/dashboard.html';
+      } else {
+        window.location.href = '/volunteer/portal.html';
+      }
+      return data;
+    });
   };
 
   /* Send magic link to the given email */
@@ -44,7 +64,7 @@
       var el = document.getElementById('verify-status');
       if (el) {
         el.innerHTML = '<p class="text-red">Invalid or missing token. Please request a new sign-in link.</p>' +
-          '<a href="index.html" class="btn btn-secondary mt-2">Back to Sign In</a>';
+          '<a href="/index.html" class="btn btn-secondary mt-2">Back to Sign In</a>';
       }
       return;
     }
@@ -60,16 +80,16 @@
 
         var user = data && data.user;
         if (user && user.role === 'admin') {
-          window.location.href = 'admin/dashboard.html';
+          window.location.href = '/admin/dashboard.html';
         } else {
-          window.location.href = 'volunteer/portal.html';
+          window.location.href = '/volunteer/portal.html';
         }
       })
       .catch(function (err) {
         var el = document.getElementById('verify-status');
         if (el) {
           el.innerHTML = '<p class="text-red">' + Shared.escapeHtml(err.message) + '</p>' +
-            '<a href="index.html" class="btn btn-secondary mt-2">Back to Sign In</a>';
+            '<a href="/index.html" class="btn btn-secondary mt-2">Back to Sign In</a>';
         }
       });
   };
@@ -77,7 +97,7 @@
   /* Logout — clear session, redirect to login */
   Auth.logout = function () {
     API.logout().finally(function () {
-      window.location.href = 'index.html';
+      window.location.href = '/index.html';
     });
   };
 
