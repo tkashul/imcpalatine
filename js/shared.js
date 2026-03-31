@@ -208,7 +208,9 @@
       declined: 'badge-red',
       upcoming: 'badge-blue',
       active: 'badge-green',
-      past: 'badge-dim'
+      past: 'badge-dim',
+      volunteer: 'badge-blue',
+      admin: 'badge-green'
     };
     var cls = map[status] || 'badge-dim';
     var label = status ? status.charAt(0).toUpperCase() + status.slice(1) : 'Unknown';
