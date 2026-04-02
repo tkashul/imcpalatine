@@ -182,4 +182,139 @@ async function handleSetPassword(authContext, body) {
   return ok({ message: 'Password set' });
 }
 
-module.exports = { handleMagicLink, handleVerify, handleLogout, handlePasswordLogin, handleSetPassword };
+async function handlePhoneMagicLink(body) {
+  const phone = body.phone;
+  if (!phone) {
+    return badRequest('phone is required');
+  }
+
+  const digits = phone.replace(/\D/g, '');
+  if (digits.length < 10) {
+    return badRequest('Invalid phone number');
+  }
+
+  const phoneLookup = await db.get(`PHONE#${digits}`, 'METADATA');
+  if (!phoneLookup) {
+    return badRequest('No account found for that phone number. Please sign up or contact your administrator.');
+  }
+
+  const email = phoneLookup.email;
+  const orgId = phoneLookup.orgId || process.env.ORG_ID;
+
+  const orgItem = await db.get(`ORG#${orgId}`, 'METADATA');
+  const orgName = orgItem ? orgItem.name : 'IMC Palatine';
+
+  const magicLinkUrl = await generateMagicLink(email, orgId);
+  await sendMagicLink(email, magicLinkUrl, orgName);
+
+  // Return masked email so UI can say "sent to j***@gmail.com"
+  const atIdx = email.indexOf('@');
+  const masked = email[0] + '***' + email.slice(atIdx);
+
+  return ok({ message: 'Magic link sent.', maskedEmail: masked });
+}
+
+async function handleSignup(body) {
+  const { name, phone, email } = body;
+  if (!name || !email) {
+    return badRequest('name and email are required');
+  }
+
+  const normalizedEmail = email.toLowerCase().trim();
+  const orgId = process.env.ORG_ID;
+
+  // Check email not already registered
+  const existingEmail = await db.get(`EMAIL#${normalizedEmail}`, 'METADATA');
+  if (existingEmail) {
+    return badRequest('An account with this email already exists. Try signing in.');
+  }
+
+  const digits = phone ? phone.replace(/\D/g, '') : '';
+
+  // Check phone not already registered
+  if (digits) {
+    const existingPhone = await db.get(`PHONE#${digits}`, 'METADATA');
+    if (existingPhone) {
+      return badRequest('An account with this phone number already exists. Try signing in.');
+    }
+  }
+
+  const userId = uuidv4();
+  const now = new Date().toISOString();
+
+  const userItem = {
+    pk: `USER#${userId}`,
+    sk: 'METADATA',
+    entityType: 'User',
+    userId,
+    orgId,
+    email: normalizedEmail,
+    name: name.trim(),
+    phone: digits,
+    role: 'volunteer',
+    createdAt: now,
+    updatedAt: now,
+  };
+
+  const emailLookup = {
+    pk: `EMAIL#${normalizedEmail}`,
+    sk: 'METADATA',
+    entityType: 'EmailLookup',
+    userId,
+    orgId,
+    email: normalizedEmail,
+    createdAt: now,
+    updatedAt: now,
+  };
+
+  const orgUserItem = {
+    pk: `ORG#${orgId}`,
+    sk: `USER#${userId}`,
+    entityType: 'OrgUser',
+    userId,
+    orgId,
+    email: normalizedEmail,
+    name: name.trim(),
+    phone: digits,
+    role: 'volunteer',
+    GSI1PK: `USER#${userId}`,
+    GSI1SK: `ORG#${orgId}`,
+    createdAt: now,
+    updatedAt: now,
+  };
+
+  const writes = [
+    { Put: { Item: userItem } },
+    { Put: { Item: emailLookup } },
+    { Put: { Item: orgUserItem } },
+  ];
+
+  if (digits) {
+    writes.push({
+      Put: {
+        Item: {
+          pk: `PHONE#${digits}`,
+          sk: 'METADATA',
+          entityType: 'PhoneLookup',
+          userId,
+          orgId,
+          email: normalizedEmail,
+          createdAt: now,
+          updatedAt: now,
+        },
+      },
+    });
+  }
+
+  await db.transactWrite(writes);
+
+  const orgItem = await db.get(`ORG#${orgId}`, 'METADATA');
+  const orgName = orgItem ? orgItem.name : 'IMC Palatine';
+
+  const magicLinkUrl = await generateMagicLink(normalizedEmail, orgId);
+  await sendMagicLink(normalizedEmail, magicLinkUrl, orgName);
+
+  return ok({ message: 'Account created! Check your email for a sign-in link.' });
+}
+
+module.exports = { handleMagicLink, handleVerify, handleLogout, handlePasswordLogin, handleSetPassword, handlePhoneMagicLink, handleSignup };

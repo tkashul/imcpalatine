@@ -95,6 +95,12 @@
     sendMagicLink: function (email) {
       return request('POST', '/api/auth/magic-link', { email: email });
     },
+    sendPhoneMagicLink: function (phone) {
+      return request('POST', '/api/auth/phone-magic-link', { phone: phone });
+    },
+    signup: function (name, phone, email) {
+      return request('POST', '/api/auth/signup', { name: name, phone: phone, email: email });
+    },
     verifyToken: function (token) {
       return request('POST', '/api/auth/verify', { token: token });
     },

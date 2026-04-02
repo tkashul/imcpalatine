@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sign Up - IMC Volunteer Planner</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="auth-page">
+
+  <div class="auth-card">
+    <div class="auth-logo">
+      <span class="logo-icon">IMC</span>
+      <span class="logo-name">Immaculate Conception Ukrainian Catholic Parish</span>
+    </div>
+
+    <!-- Signup form -->
+    <div id="signup-form-section">
+      <h1>Volunteer Sign Up</h1>
+      <p class="subtitle">Create your account to view and manage your parking volunteer schedule.</p>
+
+      <form id="signup-form" onsubmit="return false;">
+        <div class="form-group" style="text-align:left">
+          <label>Full Name <span style="color:var(--color-error)">*</span></label>
+          <input type="text" class="form-input" id="signup-name" placeholder="First Last" required autofocus>
+        </div>
+        <div class="form-group" style="text-align:left">
+          <label>Phone Number</label>
+          <input type="tel" class="form-input" id="signup-phone" placeholder="(555) 555-5555">
+        </div>
+        <div class="form-group" style="text-align:left">
+          <label>Email Address <span style="color:var(--color-error)">*</span></label>
+          <input type="email" class="form-input" id="signup-email" placeholder="you@example.com" required>
+        </div>
+        <button type="submit" class="btn btn-primary w-full" id="signup-btn">
+          Create Account
+        </button>
+      </form>
+
+      <div class="auth-links">
+        <a href="/index.html">Already have an account? Sign in</a>
+      </div>
+    </div>
+
+    <!-- Success -->
+    <div id="signup-success" style="display:none">
+      <div class="success-message">
+        <strong>You're signed up!</strong>
+        We sent a sign-in link to <strong id="signup-sent-email"></strong>. Click the link in the email to access your account.
+      </div>
+      <p class="text-dim" style="margin-top:16px;font-size:0.85rem">
+        Didn't receive it? Check your spam folder.
+        <br><a href="/index.html">Back to sign in</a>
+      </p>
+    </div>
+  </div>
+
+  <script src="js/api.js"></script>
+  <script src="js/shared.js"></script>
+  <script src="js/auth.js"></script>
+  <script>
+    (function () {
+      // Redirect if already logged in
+      if (API.getToken() && API.getUser()) {
+        var user = API.getUser();
+        window.location.href = user.role === 'admin' ? '/admin/dashboard.html' : '/volunteer/portal.html';
+        return;
+      }
+
+      var formSection = document.getElementById('signup-form-section');
+      var successSection = document.getElementById('signup-success');
+      var form = document.getElementById('signup-form');
+      var btn = document.getElementById('signup-btn');
+
+      form.addEventListener('submit', handleSignup);
+      btn.addEventListener('click', handleSignup);
+
+      function handleSignup() {
+        var name  = document.getElementById('signup-name').value.trim();
+        var phone = document.getElementById('signup-phone').value.trim();
+        var email = document.getElementById('signup-email').value.trim();
+
+        if (!name) { Shared.showToast('Please enter your name.', true); return; }
+        if (!email) { Shared.showToast('Please enter your email address.', true); return; }
+
+        btn.disabled = true;
+        btn.textContent = 'Creating account...';
+
+        Auth.signup(name, phone, email).then(function () {
+          formSection.style.display = 'none';
+          successSection.style.display = 'block';
+          document.getElementById('signup-sent-email').textContent = email;
+        }).catch(function (err) {
+          Shared.showToast(err.message || 'Sign up failed. Please try again.', true);
+          btn.disabled = false;
+          btn.textContent = 'Create Account';
+        });
+      }
+    })();
+  </script>
+</body>
+</html>

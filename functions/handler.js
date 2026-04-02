@@ -1,7 +1,7 @@
 const { requireAuth, requireAdmin } = require('./shared/auth');
 const { parseBody, serverError, notFound, unauthorized, forbidden, json, CORS_HEADERS } = require('./shared/response');
 
-const { handleMagicLink, handleVerify, handleLogout, handlePasswordLogin, handleSetPassword } = require('./api/auth');
+const { handleMagicLink, handleVerify, handleLogout, handlePasswordLogin, handleSetPassword, handlePhoneMagicLink, handleSignup } = require('./api/auth');
 const { listEvents, createEvent, getEvent, updateEvent, deleteEvent } = require('./api/events');
 const { createShift, updateShift, deleteShift } = require('./api/shifts');
 const { createLocation, updateLocation, deleteLocation } = require('./api/locations');
@@ -27,6 +27,8 @@ const routes = [
   { method: 'POST', pattern: /^\/api\/auth\/login$/, handler: 'authPasswordLogin' },
   { method: 'POST', pattern: /^\/api\/auth\/set-password$/, handler: 'authSetPassword' },
   { method: 'POST', pattern: /^\/api\/auth\/logout$/, handler: 'authLogout' },
+  { method: 'POST', pattern: /^\/api\/auth\/phone-magic-link$/, handler: 'authPhoneMagicLink' },
+  { method: 'POST', pattern: /^\/api\/auth\/signup$/, handler: 'authSignup' },
 
   // Events
   { method: 'GET', pattern: /^\/api\/events$/, handler: 'eventsList' },
@@ -112,6 +114,14 @@ exports.handler = async (event) => {
 
     if (matched.handler === 'authPasswordLogin') {
       return await handlePasswordLogin(body);
+    }
+
+    if (matched.handler === 'authPhoneMagicLink') {
+      return await handlePhoneMagicLink(body);
+    }
+
+    if (matched.handler === 'authSignup') {
+      return await handleSignup(body);
     }
 
     if (matched.handler === 'authSetPassword') {

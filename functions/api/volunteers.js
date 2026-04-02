@@ -29,6 +29,16 @@ async function createVolunteer(authContext, body) {
     return badRequest('A user with this email already exists');
   }
 
+  const phoneDigits = phone ? phone.replace(/\D/g, '') : '';
+
+  // Check if phone already exists
+  if (phoneDigits) {
+    const existingPhone = await db.get(`PHONE#${phoneDigits}`, 'METADATA');
+    if (existingPhone) {
+      return badRequest('A user with this phone number already exists');
+    }
+  }
+
   const userId = uuidv4();
   const now = new Date().toISOString();
   const userRole = role || 'volunteer';
@@ -41,7 +51,7 @@ async function createVolunteer(authContext, body) {
     orgId,
     email: normalizedEmail,
     name,
-    phone: phone || '',
+    phone: phoneDigits,
     role: userRole,
     createdAt: now,
     updatedAt: now,
@@ -66,7 +76,7 @@ async function createVolunteer(authContext, body) {
     orgId,
     email: normalizedEmail,
     name,
-    phone: phone || '',
+    phone: phoneDigits,
     role: userRole,
     GSI1PK: `USER#${userId}`,
     GSI1SK: `ORG#${orgId}`,
@@ -74,11 +84,30 @@ async function createVolunteer(authContext, body) {
     updatedAt: now,
   };
 
-  await db.transactWrite([
+  const writes = [
     { Put: { Item: userItem } },
     { Put: { Item: emailLookup } },
     { Put: { Item: orgUserItem } },
-  ]);
+  ];
+
+  if (phoneDigits) {
+    writes.push({
+      Put: {
+        Item: {
+          pk: `PHONE#${phoneDigits}`,
+          sk: 'METADATA',
+          entityType: 'PhoneLookup',
+          userId,
+          orgId,
+          email: normalizedEmail,
+          createdAt: now,
+          updatedAt: now,
+        },
+      },
+    });
+  }
+
+  await db.transactWrite(writes);
 
   return created(userItem);
 }

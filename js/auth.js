@@ -55,6 +55,16 @@
     return API.sendMagicLink(email);
   };
 
+  /* Send magic link via phone number lookup */
+  Auth.loginWithPhone = function (phone) {
+    return API.sendPhoneMagicLink(phone);
+  };
+
+  /* Self-signup for new volunteers */
+  Auth.signup = function (name, phone, email) {
+    return API.signup(name, phone, email);
+  };
+
   /* Handle the /auth/verify callback — extract token, store, redirect */
   Auth.handleVerify = function () {
     var params = new URLSearchParams(window.location.search);

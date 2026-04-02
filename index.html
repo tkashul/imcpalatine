@@ -14,15 +14,42 @@
       <span class="logo-name">Immaculate Conception Ukrainian Catholic Parish</span>
     </div>
 
-    <!-- Password login (default) -->
-    <div id="password-form-section">
+    <!-- Phone login (default) -->
+    <div id="phone-form-section">
+      <h1>Volunteer Planner</h1>
+      <p class="subtitle">Enter your phone number and we'll email you a sign-in link.</p>
+
+      <form id="phone-form" onsubmit="return false;">
+        <div class="form-group" style="text-align:left">
+          <label>Phone Number</label>
+          <input type="tel" class="form-input" id="phone-input" placeholder="(555) 555-5555" required autofocus>
+        </div>
+        <button type="submit" class="btn btn-primary w-full" id="phone-btn">
+          Send Sign-In Link
+        </button>
+      </form>
+
+      <div class="auth-links">
+        <div class="auth-mode-toggle">
+          <a href="#" id="switch-to-password">Sign in with password</a>
+          &nbsp;&middot;&nbsp;
+          <a href="#" id="switch-to-magic">Use email instead</a>
+        </div>
+        <div style="margin-top:12px">
+          <a href="/signup.html">New volunteer? Sign up here</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Password login -->
+    <div id="password-form-section" style="display:none">
       <h1>Volunteer Planner</h1>
       <p class="subtitle">Sign in to manage or view your volunteer schedule.</p>
 
       <form id="password-form" onsubmit="return false;">
         <div class="form-group" style="text-align:left">
           <label>Email Address</label>
-          <input type="email" class="form-input" id="pw-email" placeholder="you@example.com" required autofocus>
+          <input type="email" class="form-input" id="pw-email" placeholder="you@example.com" required>
         </div>
         <div class="form-group" style="text-align:left">
           <label>Password</label>
@@ -42,12 +69,12 @@
           Contact your administrator to reset your password.
         </div>
         <div class="auth-mode-toggle">
-          <a href="#" id="switch-to-magic">Sign in with email link instead</a>
+          <a href="#" id="switch-to-phone">Sign in with phone instead</a>
         </div>
       </div>
     </div>
 
-    <!-- Magic link login (secondary) -->
+    <!-- Magic link login -->
     <div id="magic-form-section" style="display:none">
       <h1>Volunteer Planner</h1>
       <p class="subtitle">We'll send a secure sign-in link to your email.</p>
@@ -64,7 +91,7 @@
 
       <div class="auth-links">
         <div class="auth-mode-toggle">
-          <a href="#" id="switch-to-password">Sign in with password instead</a>
+          <a href="#" id="switch-to-phone-from-magic">Sign in with phone instead</a>
         </div>
       </div>
     </div>
@@ -89,78 +116,63 @@
     (function () {
       Auth.init();
 
-      /* --- Element refs --- */
+      /* --- Section refs --- */
+      var phoneSection    = document.getElementById('phone-form-section');
       var passwordSection = document.getElementById('password-form-section');
-      var magicSection = document.getElementById('magic-form-section');
-      var loginSuccess = document.getElementById('login-success');
+      var magicSection    = document.getElementById('magic-form-section');
+      var loginSuccess    = document.getElementById('login-success');
 
-      /* Password form refs */
-      var pwForm = document.getElementById('password-form');
-      var pwEmail = document.getElementById('pw-email');
-      var pwPassword = document.getElementById('pw-password');
-      var pwBtn = document.getElementById('pw-btn');
-      var pwToggle = document.getElementById('pw-toggle');
-      var forgotLink = document.getElementById('forgot-password-link');
-      var forgotMsg = document.getElementById('forgot-password-msg');
-
-      /* Magic link form refs */
-      var magicForm = document.getElementById('magic-link-form');
-      var magicEmail = document.getElementById('login-email');
-      var magicBtn = document.getElementById('login-btn');
-      var sentEmail = document.getElementById('sent-email');
-      var resendLink = document.getElementById('resend-link');
-
-      /* Mode toggle refs */
-      var switchToMagic = document.getElementById('switch-to-magic');
-      var switchToPassword = document.getElementById('switch-to-password');
-
-      /* --- Mode switching --- */
-      switchToMagic.addEventListener('click', function (e) {
-        e.preventDefault();
+      function hideAll() {
+        phoneSection.style.display    = 'none';
         passwordSection.style.display = 'none';
-        magicSection.style.display = 'block';
-        loginSuccess.style.display = 'none';
-        magicEmail.focus();
-      });
+        magicSection.style.display    = 'none';
+        loginSuccess.style.display    = 'none';
+      }
 
-      switchToPassword.addEventListener('click', function (e) {
-        e.preventDefault();
-        magicSection.style.display = 'none';
-        passwordSection.style.display = 'block';
-        loginSuccess.style.display = 'none';
-        pwEmail.focus();
-      });
+      /* --- Phone form --- */
+      var phoneForm  = document.getElementById('phone-form');
+      var phoneInput = document.getElementById('phone-input');
+      var phoneBtn   = document.getElementById('phone-btn');
 
-      /* --- Password show/hide toggle --- */
-      pwToggle.addEventListener('click', function () {
-        if (pwPassword.type === 'password') {
-          pwPassword.type = 'text';
-          pwToggle.textContent = 'Hide';
-        } else {
-          pwPassword.type = 'password';
-          pwToggle.textContent = 'Show';
+      function handlePhoneLogin() {
+        var phone = phoneInput.value.trim();
+        if (!phone) {
+          Shared.showToast('Please enter your phone number.', true);
+          return;
         }
-      });
 
-      /* --- Forgot password --- */
-      forgotLink.addEventListener('click', function (e) {
-        e.preventDefault();
-        forgotMsg.style.display = forgotMsg.style.display === 'none' ? 'block' : 'none';
-      });
+        phoneBtn.disabled = true;
+        phoneBtn.textContent = 'Sending...';
 
-      /* --- Password login handler --- */
+        Auth.loginWithPhone(phone).then(function (data) {
+          hideAll();
+          loginSuccess.style.display = 'block';
+          document.getElementById('sent-email').textContent = (data && data.maskedEmail) || 'your email on file';
+        }).catch(function (err) {
+          Shared.showToast(err.message || 'Failed to send sign-in link.', true);
+          phoneBtn.disabled = false;
+          phoneBtn.textContent = 'Send Sign-In Link';
+        });
+      }
+
+      phoneForm.addEventListener('submit', function () { handlePhoneLogin(); });
+      phoneBtn.addEventListener('click', function () { handlePhoneLogin(); });
+
+      /* --- Password form --- */
+      var pwForm    = document.getElementById('password-form');
+      var pwEmail   = document.getElementById('pw-email');
+      var pwPassword = document.getElementById('pw-password');
+      var pwBtn     = document.getElementById('pw-btn');
+      var pwToggle  = document.getElementById('pw-toggle');
+      var forgotLink = document.getElementById('forgot-password-link');
+      var forgotMsg  = document.getElementById('forgot-password-msg');
+
       function handlePasswordLogin() {
         var email = pwEmail.value.trim();
         var password = pwPassword.value;
 
-        if (!email) {
-          Shared.showToast('Please enter your email address.', true);
-          return;
-        }
-        if (!password) {
-          Shared.showToast('Please enter your password.', true);
-          return;
-        }
+        if (!email) { Shared.showToast('Please enter your email address.', true); return; }
+        if (!password) { Shared.showToast('Please enter your password.', true); return; }
 
         pwBtn.disabled = true;
         pwBtn.textContent = 'Signing in...';
@@ -172,29 +184,40 @@
         });
       }
 
-      pwForm.addEventListener('submit', function () {
-        handlePasswordLogin();
+      pwForm.addEventListener('submit', function () { handlePasswordLogin(); });
+      pwBtn.addEventListener('click', function () { handlePasswordLogin(); });
+
+      pwToggle.addEventListener('click', function () {
+        if (pwPassword.type === 'password') {
+          pwPassword.type = 'text';
+          pwToggle.textContent = 'Hide';
+        } else {
+          pwPassword.type = 'password';
+          pwToggle.textContent = 'Show';
+        }
       });
 
-      pwBtn.addEventListener('click', function () {
-        handlePasswordLogin();
+      forgotLink.addEventListener('click', function (e) {
+        e.preventDefault();
+        forgotMsg.style.display = forgotMsg.style.display === 'none' ? 'block' : 'none';
       });
 
-      /* --- Magic link login handler --- */
+      /* --- Magic link form --- */
+      var magicForm  = document.getElementById('magic-link-form');
+      var magicEmail = document.getElementById('login-email');
+      var magicBtn   = document.getElementById('login-btn');
+
       function handleMagicLogin() {
         var email = magicEmail.value.trim();
-        if (!email) {
-          Shared.showToast('Please enter your email address.', true);
-          return;
-        }
+        if (!email) { Shared.showToast('Please enter your email address.', true); return; }
 
         magicBtn.disabled = true;
         magicBtn.textContent = 'Sending...';
 
         Auth.login(email).then(function () {
-          magicSection.style.display = 'none';
+          hideAll();
           loginSuccess.style.display = 'block';
-          sentEmail.textContent = email;
+          document.getElementById('sent-email').textContent = email;
         }).catch(function (err) {
           Shared.showToast(err.message || 'Failed to send sign-in link.', true);
           magicBtn.disabled = false;
@@ -202,22 +225,47 @@
         });
       }
 
-      magicForm.addEventListener('submit', function () {
-        handleMagicLogin();
+      magicForm.addEventListener('submit', function () { handleMagicLogin(); });
+      magicBtn.addEventListener('click', function () { handleMagicLogin(); });
+
+      /* --- Mode switching --- */
+      document.getElementById('switch-to-password').addEventListener('click', function (e) {
+        e.preventDefault();
+        hideAll();
+        passwordSection.style.display = 'block';
+        pwEmail.focus();
       });
 
-      magicBtn.addEventListener('click', function () {
-        handleMagicLogin();
+      document.getElementById('switch-to-magic').addEventListener('click', function (e) {
+        e.preventDefault();
+        hideAll();
+        magicSection.style.display = 'block';
+        magicEmail.focus();
+      });
+
+      document.getElementById('switch-to-phone').addEventListener('click', function (e) {
+        e.preventDefault();
+        hideAll();
+        phoneSection.style.display = 'block';
+        phoneInput.focus();
+      });
+
+      document.getElementById('switch-to-phone-from-magic').addEventListener('click', function (e) {
+        e.preventDefault();
+        hideAll();
+        phoneSection.style.display = 'block';
+        phoneInput.focus();
       });
 
       /* --- Resend link --- */
-      resendLink.addEventListener('click', function (e) {
+      document.getElementById('resend-link').addEventListener('click', function (e) {
         e.preventDefault();
-        magicSection.style.display = 'block';
-        loginSuccess.style.display = 'none';
-        magicBtn.disabled = false;
-        magicBtn.textContent = 'Send Sign-In Link';
-        magicEmail.focus();
+        hideAll();
+        phoneSection.style.display = 'block';
+        phoneInput.value = '';
+        phoneBtn.disabled = false;
+        phoneBtn.textContent = 'Send Sign-In Link';
+        phoneInput.focus();
       });
     })();
   </script>
