@@ -9,6 +9,24 @@ async function listEvents(authContext) {
   // Sort by date ascending
   events.sort((a, b) => (a.date || '').localeCompare(b.date || ''));
 
+  // Attach shift + assignment counts to each event
+  for (const ev of events) {
+    const shifts = await db.query(`EVENT#${ev.eventId}`, 'SHIFT#');
+    let totalSlots = 0;
+    let filledSlots = 0;
+    let pendingCount = 0;
+    for (const shift of shifts) {
+      totalSlots += shift.maxVolunteers || 0;
+      const assignments = await db.query(`SHIFT#${shift.shiftId}`, 'ASSIGN#');
+      filledSlots += assignments.length;
+      pendingCount += assignments.filter(a => a.status === 'pending').length;
+    }
+    ev.shift_count = shifts.length;
+    ev.total_slots = totalSlots;
+    ev.filled_slots = filledSlots;
+    ev.pending_count = pendingCount;
+  }
+
   return ok(events);
 }
 
