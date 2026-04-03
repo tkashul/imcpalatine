@@ -367,7 +367,7 @@
       return;
     }
 
-    shifts.sort(function (a, b) { return (a.startTime || '').localeCompare(b.startTime || ''); });
+    shifts.sort(function (a, b) { return (a.timeStart || '').localeCompare(b.timeStart || ''); });
 
     var html = '';
     shifts.forEach(function (shift) {
@@ -571,8 +571,6 @@
         var start = document.getElementById('shift-start').value;
         var end = document.getElementById('shift-end').value;
         var max = parseInt(document.getElementById('shift-max').value) || 10;
-
-        alert('DEBUG\nstart=' + start + '\nend=' + end + '\neventId=' + Admin._eventId);
 
         if (!start || !end) {
           Shared.showToast('Start and end times are required.', true);
@@ -781,7 +779,7 @@
       return;
     }
 
-    shifts.sort(function (a, b) { return (a.startTime || '').localeCompare(b.startTime || ''); });
+    shifts.sort(function (a, b) { return (a.timeStart || '').localeCompare(b.timeStart || ''); });
 
     var totalSlots = 0;
     var filledSlots = 0;
