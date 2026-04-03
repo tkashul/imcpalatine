@@ -572,7 +572,7 @@
         var end = document.getElementById('shift-end').value;
         var max = parseInt(document.getElementById('shift-max').value) || 10;
 
-        Shared.showToast('DEBUG: start=' + start + ' end=' + end + ' eventId=' + Admin._eventId, true);
+        alert('DEBUG\nstart=' + start + '\nend=' + end + '\neventId=' + Admin._eventId);
 
         if (!start || !end) {
           Shared.showToast('Start and end times are required.', true);
