@@ -140,7 +140,7 @@
     listAssignmentsByEvent: function (eventId) { return request('GET', '/api/assignments/event/' + eventId); },
     createAssignment: function (data) { return request('POST', '/api/assignments', data); },
     updateAssignment: function (id, data) { return request('PUT', '/api/assignments/' + id, data); },
-    deleteAssignment: function (id) { return request('DELETE', '/api/assignments/' + id); },
+    deleteAssignment: function (id, shiftId) { return request('DELETE', '/api/assignments/' + id, { shiftId: shiftId }); },
     sendInvites: function (assignmentIds) { return request('POST', '/api/assignments/invite', { assignmentIds: assignmentIds }); },
 
     /* --- My (volunteer self-service) --- */

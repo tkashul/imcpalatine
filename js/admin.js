@@ -398,7 +398,7 @@
           html += '<div class="assignment-row">' +
             '<div class="vol-name">' + _e(volName) + '</div>' +
             '<div class="vol-location">' +
-              '<select class="form-select" style="max-width:180px;padding:6px 10px;font-size:0.82rem" onchange="Admin.changeAssignmentLocation(\'' + _e(a.assignmentId) + '\', this.value)">' +
+              '<select class="form-select" style="max-width:180px;padding:6px 10px;font-size:0.82rem" onchange="Admin.changeAssignmentLocation(\'' + _e(a.assignmentId) + '\', \'' + _e(shift.shiftId) + '\', this.value)">' +
                 '<option value="">No location</option>';
           locations.forEach(function (l) {
             html += '<option value="' + _e(l.locationId) + '"' + (a.locationId === l.locationId ? ' selected' : '') + '>' + _e(l.name) + '</option>';
@@ -407,7 +407,7 @@
             '</div>' +
             '<div class="vol-status">' + Shared.statusBadge(a.status || 'pending') + '</div>' +
             '<div class="vol-actions">' +
-              '<button class="btn btn-xs btn-danger" onclick="Admin.removeAssignment(\'' + _e(a.assignmentId) + '\', \'' + _e(volName) + '\')">Remove</button>' +
+              '<button class="btn btn-xs btn-danger" onclick="Admin.removeAssignment(\'' + _e(a.assignmentId) + '\', \'' + _e(shift.shiftId) + '\', \'' + _e(volName) + '\')">Remove</button>' +
             '</div>' +
           '</div>';
         });
@@ -503,9 +503,9 @@
     });
   };
 
-  Admin.removeAssignment = function (assignmentId, name) {
+  Admin.removeAssignment = function (assignmentId, shiftId, name) {
     Shared.confirmDelete('assignment for ' + name, function () {
-      API.deleteAssignment(assignmentId).then(function () {
+      API.deleteAssignment(assignmentId, shiftId).then(function () {
         Shared.showToast('Assignment removed.');
         Admin.loadEventDetail(Admin._eventId);
       }).catch(function (err) {
@@ -514,8 +514,8 @@
     });
   };
 
-  Admin.changeAssignmentLocation = function (assignmentId, locationId) {
-    API.updateAssignment(assignmentId, { locationId: locationId || null }).then(function () {
+  Admin.changeAssignmentLocation = function (assignmentId, shiftId, locationId) {
+    API.updateAssignment(assignmentId, { shiftId: shiftId, locationId: locationId || null }).then(function () {
       Shared.showToast('Location updated.');
     }).catch(function (err) {
       Shared.showToast(err.message, true);
