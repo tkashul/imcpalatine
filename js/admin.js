@@ -302,8 +302,8 @@
         (shift.assignments || []).forEach(function (a) {
           allAssignments.push(Object.assign({}, a, {
             shiftLabel: shift.label,
-            shiftStart: shift.startTime,
-            shiftEnd: shift.endTime
+            shiftStart: shift.timeStart,
+            shiftEnd: shift.timeEnd
           }));
         });
       });
@@ -363,7 +363,7 @@
 
       html += '<div class="shift-block">';
       html += '<div class="shift-header">' +
-        '<div class="shift-time">' + _e(Shared.formatTime(shift.startTime)) + ' \u2013 ' + _e(Shared.formatTime(shift.endTime)) + '</div>' +
+        '<div class="shift-time">' + _e(Shared.formatTime(shift.timeStart)) + ' \u2013 ' + _e(Shared.formatTime(shift.timeEnd)) + '</div>' +
         '<div class="shift-meta">' +
           '<span>' + filled + '/' + max + ' volunteers</span>' +
           '<button class="btn btn-xs btn-secondary" onclick="Admin.editShift(\'' + _e(shift.shiftId) + '\')">Edit</button>' +
@@ -564,8 +564,8 @@
         }
 
         API.createShift(Admin._eventId, {
-          startTime: start,
-          endTime: end,
+          timeStart: start,
+          timeEnd: end,
           maxVolunteers: max
         }).then(function () {
           Shared.closeModal();
@@ -586,11 +586,11 @@
       '<div class="form-row">' +
         '<div class="form-group">' +
           '<label>Start Time <span class="required">*</span></label>' +
-          '<input type="time" class="form-input" id="shift-start" value="' + _e(shift.startTime || '') + '">' +
+          '<input type="time" class="form-input" id="shift-start" value="' + _e(shift.timeStart || '') + '">' +
         '</div>' +
         '<div class="form-group">' +
           '<label>End Time <span class="required">*</span></label>' +
-          '<input type="time" class="form-input" id="shift-end" value="' + _e(shift.endTime || '') + '">' +
+          '<input type="time" class="form-input" id="shift-end" value="' + _e(shift.timeEnd || '') + '">' +
         '</div>' +
       '</div>' +
       '<div class="form-group">' +
@@ -611,8 +611,8 @@
         }
 
         API.updateShift(shiftId, {
-          startTime: start,
-          endTime: end,
+          timeStart: start,
+          timeEnd: end,
           maxVolunteers: max
         }).then(function () {
           Shared.closeModal();
@@ -779,7 +779,7 @@
 
     shifts.forEach(function (shift) {
       html += '<tr>';
-      html += '<td>' + _e(Shared.formatTime(shift.startTime)) + ' \u2013 ' + _e(Shared.formatTime(shift.endTime)) + '</td>';
+      html += '<td>' + _e(Shared.formatTime(shift.timeStart)) + ' \u2013 ' + _e(Shared.formatTime(shift.timeEnd)) + '</td>';
 
       var shiftAssignments = assignments.filter(function (a) { return a.shiftId === shift.shiftId; });
 
