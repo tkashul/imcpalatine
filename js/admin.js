@@ -7,6 +7,20 @@
   var Admin = {};
   var _e = Shared.escapeHtml;
 
+  function buildTimeOptions(selectedVal) {
+    var times = [];
+    for (var h = 6; h <= 22; h++) {
+      times.push((h < 10 ? '0' : '') + h + ':00');
+      times.push((h < 10 ? '0' : '') + h + ':30');
+    }
+    var html = '<option value="">-- select --</option>';
+    times.forEach(function (t) {
+      var label = Shared.formatTime(t);
+      html += '<option value="' + t + '"' + (t === selectedVal ? ' selected' : '') + '>' + label + '</option>';
+    });
+    return html;
+  }
+
   /* ==========================================================
      Dashboard
      ========================================================== */
@@ -539,11 +553,11 @@
       '<div class="form-row">' +
         '<div class="form-group">' +
           '<label>Start Time <span class="required">*</span></label>' +
-          '<input type="time" class="form-input" id="shift-start">' +
+          '<select class="form-input" id="shift-start">' + buildTimeOptions('') + '</select>' +
         '</div>' +
         '<div class="form-group">' +
           '<label>End Time <span class="required">*</span></label>' +
-          '<input type="time" class="form-input" id="shift-end">' +
+          '<select class="form-input" id="shift-end">' + buildTimeOptions('') + '</select>' +
         '</div>' +
       '</div>' +
       '<div class="form-group">' +
@@ -586,11 +600,11 @@
       '<div class="form-row">' +
         '<div class="form-group">' +
           '<label>Start Time <span class="required">*</span></label>' +
-          '<input type="time" class="form-input" id="shift-start" value="' + _e(shift.timeStart || '') + '">' +
+          '<select class="form-input" id="shift-start">' + buildTimeOptions(shift.timeStart || '') + '</select>' +
         '</div>' +
         '<div class="form-group">' +
           '<label>End Time <span class="required">*</span></label>' +
-          '<input type="time" class="form-input" id="shift-end" value="' + _e(shift.timeEnd || '') + '">' +
+          '<select class="form-input" id="shift-end">' + buildTimeOptions(shift.timeEnd || '') + '</select>' +
         '</div>' +
       '</div>' +
       '<div class="form-group">' +
