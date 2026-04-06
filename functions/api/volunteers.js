@@ -136,6 +136,17 @@ async function updateVolunteer(authContext, volunteerId, body) {
   // Also update the ORG index item
   await db.update(`ORG#${authContext.orgId}`, `USER#${volunteerId}`, updates);
 
+  // Propagate name changes to all assignment records
+  if (updates.name) {
+    const assignments = await db.query(`USER#${volunteerId}`, 'ASSIGN#');
+    for (const a of assignments) {
+      await db.update(`USER#${volunteerId}`, a.sk, { volunteerName: updates.name });
+      if (a.shiftId) {
+        await db.update(`SHIFT#${a.shiftId}`, `ASSIGN#${volunteerId}`, { volunteerName: updates.name });
+      }
+    }
+  }
+
   return ok(updated);
 }
 
@@ -159,6 +170,10 @@ async function deleteVolunteer(authContext, volunteerId) {
     if (assign.shiftId) {
       operations.push({ Delete: { Key: { pk: `SHIFT#${assign.shiftId}`, sk: `ASSIGN#${assign.assignmentId}` } } });
     }
+  }
+
+  if (userItem.phone) {
+    operations.push({ Delete: { Key: { pk: `PHONE#${userItem.phone}`, sk: 'METADATA' } } });
   }
 
   if (operations.length <= 100) {

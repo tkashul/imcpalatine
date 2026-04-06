@@ -1275,7 +1275,13 @@ tbody tr.clickable {
 
 @media (max-width: 768px) {
   .sidebar {
+    position: fixed;
+    left: 0;
+    top: 0;
+    height: 100vh;
+    z-index: 1000;
     transform: translateX(-100%);
+    transition: transform 0.3s ease;
   }
   .sidebar.open {
     transform: translateX(0);
@@ -1290,8 +1296,8 @@ tbody tr.clickable {
   }
 
   .main-content {
-    margin-left: 0;
-    padding: 20px 16px;
+    margin-left: 0 !important;
+    padding: 16px;
     padding-top: 72px;
   }
 

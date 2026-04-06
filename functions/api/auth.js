@@ -176,6 +176,10 @@ async function handleSetPassword(authContext, body) {
     return badRequest('password is required');
   }
 
+  if (password.length < 6) {
+    return badRequest('Password must be at least 6 characters');
+  }
+
   const passwordHash = hashPassword(password);
   await db.update(`USER#${authContext.userId}`, 'METADATA', { passwordHash });
 

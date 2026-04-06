@@ -220,6 +220,9 @@
             return;
           }
 
+          var submitBtn = document.querySelector('.modal-footer .btn-primary');
+          if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = 'Saving...'; }
+
           var data = { name: name, date: date, description: desc };
           var promise = eventId ? API.updateEvent(eventId, data) : API.createEvent(data);
 
@@ -229,6 +232,8 @@
             Admin.loadEvents();
           }).catch(function (err) {
             Shared.showToast(err.message, true);
+          }).finally(function () {
+            if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = eventId ? 'Save Changes' : 'Create Event'; }
           });
         }}
       ]);
@@ -983,6 +988,10 @@
             return;
           }
 
+          var submitBtn = document.querySelector('.modal-footer .btn-primary');
+          var originalLabel = volunteerId ? 'Save Changes' : 'Add Volunteer';
+          if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = 'Saving...'; }
+
           var data = { name: name, email: email, phone: phone, role: role, notes: notes };
           var promise = volunteerId ? API.updateVolunteer(volunteerId, data) : API.createVolunteer(data);
 
@@ -992,6 +1001,8 @@
             Admin.loadVolunteers();
           }).catch(function (err) {
             Shared.showToast(err.message, true);
+          }).finally(function () {
+            if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = originalLabel; }
           });
         }}
       ]);

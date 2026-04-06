@@ -147,11 +147,6 @@
 
         renderDaySheet(event, shifts, locations, locMap, assignByShift, volMap);
 
-        /* Auto-print after short delay */
-        setTimeout(function () {
-          window.print();
-        }, 600);
-
       } catch (err) {
         showError('Failed to load event data: ' + err.message);
       }

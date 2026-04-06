@@ -356,22 +356,14 @@ async function myAvailableShifts(authContext) {
 
 async function mySignUp(authContext, body) {
   const { userId, orgId } = authContext;
-  const { shift_id: shiftId } = body;
+  const { shiftId, eventId } = body;
 
   if (!shiftId) {
-    return badRequest('shift_id is required');
+    return badRequest('shiftId is required');
   }
 
-  // Find the shift — we need to find which event it belongs to
-  // The shift's pk is EVENT#<eventId>, sk is SHIFT#<shiftId>
-  // We don't know the eventId, so we need to look it up via the body or search.
-  // Since shifts have eventId stored on the item, we can use GSI or we check body.
-  // Alternative: the frontend may not pass eventId. Let's check if we can find the shift by scanning.
-  // Better approach: require event_id in the body, or use the shift item's eventId.
-  // For now, let's check if body has event_id, otherwise we need another approach.
-  const eventId = body.event_id;
   if (!eventId) {
-    return badRequest('event_id is required');
+    return badRequest('eventId is required');
   }
 
   const shiftItem = await db.get(`EVENT#${eventId}`, `SHIFT#${shiftId}`);
